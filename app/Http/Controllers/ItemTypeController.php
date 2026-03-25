@@ -29,13 +29,15 @@ class ItemTypeController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'code' => 'required|string|unique:item_types',
-            'name' => 'required|string',
-            'status' => 'boolean',
+        $validated = $request->validate([
+            'code'   => 'required|string|max:255|unique:item_types',
+            'name'   => 'required|string|max:255',
+            'status' => 'nullable|boolean',
         ]);
 
-        ItemType::create($request->all());
+        $validated['status'] = $request->boolean('status'); // convierte checkbox a bool
+
+        ItemType::create($validated);
 
         return redirect()->route('item-types.index')->with('success', 'Item Type created successfully.');
     }
@@ -65,13 +67,15 @@ class ItemTypeController extends Controller
     {
         $itemType = ItemType::findOrFail($id);
 
-        $request->validate([
-            'code' => 'required|string|unique:item_types,code,' . $id,
-            'name' => 'required|string',
-            'status' => 'boolean',
+        $validated = $request->validate([
+            'code'   => 'required|string|max:255|unique:item_types,code,' . $id,
+            'name'   => 'required|string|max:255',
+            'status' => 'nullable|boolean',
         ]);
 
-        $itemType->update($request->all());
+        $validated['status'] = $request->boolean('status');
+
+        $itemType->update($validated);
 
         return redirect()->route('item-types.index')->with('success', 'Item Type updated successfully.');
     }
