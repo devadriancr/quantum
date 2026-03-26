@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('code')->unique();
             $table->string('name');
-            $table->double('total_capacity', 15, 2);
+            $table->double('total_capacity', 15, 2)->nullable();
             $table->enum('status', ['OPERATIONAL', 'MAINTENANCE', 'CLOSED', 'INACTIVE'])->default('OPERATIONAL');
             $table->timestamps();
         });
