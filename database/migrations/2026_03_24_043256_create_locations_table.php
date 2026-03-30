@@ -15,13 +15,13 @@ return new class extends Migration
             $table->id();
             $table->string('code')->unique();
             $table->string('name');
-            $table->integer('row');
-            $table->integer('rack');
-            $table->integer('shelf');
-            $table->enum('zone', ['RECEIVING', 'STORAGE', 'SHIPPING']);
-            $table->double('available_capacity', 15, 2);
-            $table->enum('status', ['ACTIVE', 'BLOCKED', 'AVAILABLE', 'OCCUPIED', 'RESERVED', 'MAINTENANCE'])->default('AVAILABLE');
-            $table->foreignId('warehouse_id')->constrained('warehouses');
+            $table->integer('row')->nullable();
+            $table->integer('rack')->nullable();
+            $table->integer('shelf')->nullable();
+            $table->enum('zone', ['RECEIVING', 'STORAGE', 'SHIPPING'])->nullable();
+            $table->double('available_capacity', 15, 2)->nullable();
+            $table->enum('status', ['ACTIVE', 'BLOCKED', 'AVAILABLE', 'OCCUPIED', 'RESERVED', 'MAINTENANCE', 'UNAVAILABLE'])->default('AVAILABLE');
+            $table->foreignId('warehouse_id')->nullable()->constrained('warehouses');
             $table->timestamps();
         });
     }

@@ -12,6 +12,7 @@ use App\Http\Controllers\JobController;
 use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\ItemClassController;
 use App\Http\Controllers\ItemTypeController;
+use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MeasurementUnitController;
 use App\Http\Controllers\WarehouseController;
 
@@ -39,7 +40,8 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::resource('item-types', ItemTypeController::class);
     Route::resource('item-classes', ItemClassController::class);
     Route::resource('measurement-units', MeasurementUnitController::class);
-    Route::resource('/warehouses', WarehouseController::class);
+    Route::resource('warehouses', WarehouseController::class);
+    Route::resource('locations', LocationController::class);
     Route::get('/ecommerce/customers', [CustomerController::class, 'index'])->name('customers');
     Route::get('/ecommerce/orders', [OrderController::class, 'index'])->name('orders');
     Route::get('/ecommerce/invoices', [InvoiceController::class, 'index'])->name('invoices');
