@@ -19,6 +19,8 @@
                 $table->float('data', 10, 2)->nullable();
                 $table->tinyInteger('dataset_name')->nullable();
                 $table->tinyInteger('data_type')->default(1);
+                $table->foreignId('created_by_user_id')->nullable()->constrained('users');
+                $table->foreignId('updated_by_user_id')->nullable()->constrained('users');
                 $table->timestamps();
             });
         }

@@ -22,6 +22,8 @@ return new class extends Migration
             $table->double('available_capacity', 15, 2)->nullable();
             $table->enum('status', ['ACTIVE', 'BLOCKED', 'AVAILABLE', 'OCCUPIED', 'RESERVED', 'MAINTENANCE', 'UNAVAILABLE'])->default('AVAILABLE');
             $table->foreignId('warehouse_id')->nullable()->constrained('warehouses');
+            $table->foreignId('created_by_user_id')->nullable()->constrained('users');
+            $table->foreignId('updated_by_user_id')->nullable()->constrained('users');
             $table->timestamps();
         });
     }

@@ -6,9 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class PackingSpecification extends Model
 {
+    use \App\Models\Traits\Blameable;
+
     protected $fillable = [
         'name',
         'quantity',
-        'status'
+        'status',
+        'created_by_user_id',
+        'updated_by_user_id',
     ];
 }

@@ -16,6 +16,8 @@ return new class extends Migration
             $table->string('name');
             $table->integer('quantity')->nullable();
             $table->string('status');
+            $table->foreignId('created_by_user_id')->nullable()->constrained('users');
+            $table->foreignId('updated_by_user_id')->nullable()->constrained('users');
             $table->timestamps();
         });
     }

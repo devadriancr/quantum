@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Item extends Model
 {
+    use \App\Models\Traits\Blameable;
+
     protected $fillable = [
         'code',
         'description',
@@ -16,6 +18,8 @@ class Item extends Model
         'default_safety_stock',
         'last_unit_cost',
         'active',
+        'created_by_user_id',
+        'updated_by_user_id',
     ];
 
     /**

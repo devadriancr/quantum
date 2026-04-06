@@ -32,7 +32,19 @@ class ItemClassController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'code' => 'required|string|max:255|unique:item_classes,code',
+            'name' => 'required|string|max:255',
+            'status' => 'nullable|boolean',
+        ]);
+
+        $validated['status'] = $request->boolean('status');
+        $validated['created_by_user_id'] = auth()->id();
+        $validated['updated_by_user_id'] = auth()->id();
+
+        ItemClass::create($validated);
+
+        return redirect()->route('item-classes.index')->with('success', 'Item Class created successfully.');
     }
 
     /**
@@ -56,7 +68,20 @@ class ItemClassController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $itemClass = ItemClass::findOrFail($id);
+
+        $validated = $request->validate([
+            'code' => 'required|string|max:255|unique:item_classes,code,' . $id,
+            'name' => 'required|string|max:255',
+            'status' => 'nullable|boolean',
+        ]);
+
+        $validated['status'] = $request->boolean('status');
+        $validated['updated_by_user_id'] = auth()->id();
+
+        $itemClass->update($validated);
+
+        return redirect()->route('item-classes.index')->with('success', 'Item Class updated successfully.');
     }
 
     /**

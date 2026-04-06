@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('name');
             $table->double('total_capacity', 15, 2)->nullable();
             $table->enum('status', ['OPERATIONAL', 'MAINTENANCE', 'CLOSED', 'INACTIVE'])->default('OPERATIONAL');
+            $table->foreignId('created_by_user_id')->nullable()->constrained('users');
+            $table->foreignId('updated_by_user_id')->nullable()->constrained('users');
             $table->timestamps();
         });
     }

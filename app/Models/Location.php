@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Location extends Model
 {
+    use \App\Models\Traits\Blameable;
+
     protected $fillable = [
         'code',
         'name',
@@ -15,7 +17,9 @@ class Location extends Model
         'zone',
         'available_capacity',
         'status',
-        'warehouse_id'
+        'warehouse_id',
+        'created_by_user_id',
+        'updated_by_user_id'
     ];
 
     public function warehouse()

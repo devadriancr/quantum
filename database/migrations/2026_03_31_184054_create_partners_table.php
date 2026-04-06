@@ -11,17 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('items', function (Blueprint $table) {
+        Schema::create('partners', function (Blueprint $table) {
             $table->id();
             $table->string('code')->unique();
-            $table->string('description');
-            $table->foreignId('item_class_id')->constrained('item_classes');
-            $table->foreignId('item_type_id')->constrained('item_types');
-            $table->foreignId('measurement_unit_id')->constrained('measurement_units');
-            $table->foreignId('packing_specification_id')->constrained('packing_specifications');
-            $table->integer('default_safety_stock');
-            $table->decimal('last_unit_cost', 15, 2);
-            $table->boolean('active')->default(true);
+            $table->string('name');
+            $table->enum('partner_type', ['supplier', 'customer', 'both']);
+            $table->string('contact_email')->nullable();
+            $table->string('contact_phone')->nullable();
+            $table->string('address')->nullable();
+            $table->string('city')->nullable();
+            $table->string('country')->nullable();
+            $table->enum('status', ['ACTIVE', 'INACTIVE'])->default('ACTIVE');
             $table->foreignId('created_by_user_id')->nullable()->constrained('users');
             $table->foreignId('updated_by_user_id')->nullable()->constrained('users');
             $table->timestamps();
@@ -33,6 +33,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('items');
+        Schema::dropIfExists('partners');
     }
 };

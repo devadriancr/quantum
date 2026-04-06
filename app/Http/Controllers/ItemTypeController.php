@@ -37,6 +37,9 @@ class ItemTypeController extends Controller
 
         $validated['status'] = $request->boolean('status'); // convierte checkbox a bool
 
+        $validated['created_by_user_id'] = auth()->id();
+        $validated['updated_by_user_id'] = auth()->id();
+
         ItemType::create($validated);
 
         return redirect()->route('item-types.index')->with('success', 'Item Type created successfully.');
@@ -74,6 +77,8 @@ class ItemTypeController extends Controller
         ]);
 
         $validated['status'] = $request->boolean('status');
+
+        $validated['updated_by_user_id'] = auth()->id();
 
         $itemType->update($validated);
 

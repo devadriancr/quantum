@@ -40,7 +40,21 @@ class WarehouseController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'code' => 'required|string|max:255|unique:warehouses,code',
+            'name' => 'required|string|max:255',
+            'total_capacity' => 'nullable|numeric|min:0',
+            'status' => 'nullable|boolean',
+        ]);
+
+        $validated['status'] = $request->boolean('status');
+        $validated['created_by_user_id'] = auth()->id();
+        $validated['updated_by_user_id'] = auth()->id();
+
+        $warehouse = Warehouse::create($validated);
+
+        return redirect()->route('warehouses.show', $warehouse)
+            ->with('success', __('Almacén creado correctamente.'));
     }
 
     /**
@@ -69,6 +83,7 @@ class WarehouseController extends Controller
 
         $warehouse->update([
             'total_capacity' => $request->total_capacity,
+            'updated_by_user_id' => auth()->id(),
         ]);
 
         return redirect()

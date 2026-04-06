@@ -37,6 +37,9 @@ class MeasurementUnitController extends Controller
 
         $validated['status'] = $request->boolean('status');
 
+        $validated['created_by_user_id'] = auth()->id();
+        $validated['updated_by_user_id'] = auth()->id();
+
         MeasurementUnit::create($validated);
 
         return redirect()->route('measurement-units.index')
@@ -71,6 +74,8 @@ class MeasurementUnitController extends Controller
         ]);
 
         $validated['status'] = $request->boolean('status');
+
+        $validated['updated_by_user_id'] = auth()->id();
 
         $measurementUnit->update($validated);
 
