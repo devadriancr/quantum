@@ -28,6 +28,21 @@ class InitDevCommand extends Command
         ],
         [
             'command' => 'db:seed',
+            'params'  => ['--class' => 'PartnerSeeder'],
+            'info'    => 'Sincronizando socios...'
+        ],
+        [
+            'command' => 'sync:projects',
+            'params'  => [],
+            'info'    => 'Corriendo proyectos...'
+        ],
+        [
+            'command' => 'db:seed',
+            'params'  => ['--class' => 'ProjectPrefixSeeder'],
+            'info'    => 'Corriendo ProjectPrefixSeeder...'
+        ],
+        [
+            'command' => 'db:seed',
             'params'  => ['--class' => 'MeasurementUnitSeeder'],
             'info'    => 'Corriendo MeasurementUnitSeeder...'
         ],
@@ -46,7 +61,7 @@ class InitDevCommand extends Command
             'params'  => [],
             'info'    => 'Sincronizando ubicaciones...'
         ],
-        // 👈 Aquí pueden seguir agregando más comandos en el futuro
+
     ];
 
     /**

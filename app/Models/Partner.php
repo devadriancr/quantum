@@ -9,6 +9,21 @@ class Partner extends Model
     use \App\Models\Traits\Blameable;
 
     protected $fillable = [
-        'code', 'name', 'partner_type', 'contact_email', 'contact_phone', 'address', 'city', 'country', 'status', 'created_by_user_id', 'updated_by_user_id'
+        'code',
+        'name',
+        'partner_type',
+        'contact_email',
+        'contact_phone',
+        'address',
+        'city',
+        'country',
+        'status',
+        'created_by_user_id',
+        'updated_by_user_id'
     ];
+
+    public function projects()
+    {
+        return $this->hasMany(Project::class);
+    }
 }

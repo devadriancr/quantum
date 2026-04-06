@@ -14,6 +14,9 @@ use App\Http\Controllers\ItemClassController;
 use App\Http\Controllers\ItemTypeController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MeasurementUnitController;
+use App\Http\Controllers\PartnerController;
+use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProjectPrefixController;
 use App\Http\Controllers\WarehouseController;
 
 /*
@@ -42,6 +45,9 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::resource('measurement-units', MeasurementUnitController::class);
     Route::resource('warehouses', WarehouseController::class);
     Route::resource('locations', LocationController::class);
+    Route::resource('partners', PartnerController::class);
+    Route::resource('projects', ProjectController::class);
+    Route::resource('project-prefixes', ProjectPrefixController::class);
     Route::get('/ecommerce/customers', [CustomerController::class, 'index'])->name('customers');
     Route::get('/ecommerce/orders', [OrderController::class, 'index'])->name('orders');
     Route::get('/ecommerce/invoices', [InvoiceController::class, 'index'])->name('invoices');
