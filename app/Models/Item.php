@@ -53,4 +53,12 @@ class Item extends Model
     {
         return $this->belongsTo(PackingSpecification::class);
     }
+
+    /**
+     *
+     */
+    public function projects()
+    {
+        return $this->belongsToMany(Project::class, 'item_project', 'item_id', 'project_id');
+    }
 }

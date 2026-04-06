@@ -15,7 +15,7 @@ class MeasurementUnitSeeder extends Seeder
     {
         $units = [
             // --- CONTEO Y PIEZAS (LO MÁS USADO EN PISO) ---
-            ['code' => 'EA',  'name' => 'Cada uno (Pieza)', 'status' => true], // Estándar Infor LX / SAP (Each)
+            ['code' => 'EA',  'name' => 'Pieza', 'status' => true], // Estándar Infor LX / SAP (Each)
             ['code' => 'PZA', 'name' => 'Pieza', 'status' => true],            // Común en sistemas locales
             ['code' => 'SET', 'name' => 'Juego / Set', 'status' => true],      // Conjunto de piezas
             ['code' => 'KIT', 'name' => 'Kit de Ensamble', 'status' => true],  // Kit para línea de producción

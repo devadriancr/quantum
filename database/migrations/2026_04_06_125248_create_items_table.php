@@ -14,13 +14,13 @@ return new class extends Migration
         Schema::create('items', function (Blueprint $table) {
             $table->id();
             $table->string('code')->unique();
-            $table->string('description');
-            $table->foreignId('item_class_id')->constrained('item_classes');
-            $table->foreignId('item_type_id')->constrained('item_types');
-            $table->foreignId('measurement_unit_id')->constrained('measurement_units');
-            $table->foreignId('packing_specification_id')->constrained('packing_specifications');
-            $table->integer('default_safety_stock');
-            $table->decimal('last_unit_cost', 15, 2);
+            $table->string('description')->nullable();
+            $table->foreignId('item_class_id')->nullable()->constrained('item_classes');
+            $table->foreignId('item_type_id')->nullable()->constrained('item_types');
+            $table->foreignId('measurement_unit_id')->nullable()->constrained('measurement_units');
+            $table->foreignId('packing_specification_id')->nullable()->constrained('packing_specifications');
+            $table->integer('default_safety_stock')->nullable();
+            $table->decimal('last_unit_cost', 15, 2)->nullable();
             $table->boolean('active')->default(true);
             $table->foreignId('created_by_user_id')->nullable()->constrained('users');
             $table->foreignId('updated_by_user_id')->nullable()->constrained('users');

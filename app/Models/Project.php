@@ -28,4 +28,9 @@ class Project extends Model
     {
         return $this->hasMany(ProjectPrefix::class);
     }
+
+    public function items()
+    {
+        return $this->belongsToMany(Item::class, 'item_project', 'project_id', 'item_id');
+    }
 }

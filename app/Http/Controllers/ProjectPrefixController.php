@@ -21,13 +21,13 @@ class ProjectPrefixController extends Controller
 
         $prefixes = $query->orderBy('code')->paginate(10)->withQueryString();
 
-        return view('project_prefixes.index', compact('prefixes'));
+        return view('project-prefixes.index', compact('prefixes'));
     }
 
     public function create()
     {
         $projects = Project::where('status', 'ACTIVE')->orderBy('code')->get();
-        return view('project_prefixes.create', compact('projects'));
+        return view('project-prefixes.create', compact('projects'));
     }
 
     public function store(Request $request)
@@ -48,13 +48,13 @@ class ProjectPrefixController extends Controller
     public function show(ProjectPrefix $projectPrefix)
     {
         $projectPrefix->load('project');
-        return view('project_prefixes.show', compact('projectPrefix'));
+        return view('project-prefixes.show', compact('projectPrefix'));
     }
 
     public function edit(ProjectPrefix $projectPrefix)
     {
         $projects = Project::where('status', 'ACTIVE')->orderBy('code')->get();
-        return view('project_prefixes.edit', compact('projectPrefix', 'projects'));
+        return view('project-prefixes.edit', compact('projectPrefix', 'projects'));
     }
 
     public function update(Request $request, ProjectPrefix $projectPrefix)

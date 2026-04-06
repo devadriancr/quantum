@@ -4,19 +4,19 @@
         <div class="sm:flex sm:justify-between sm:items-center mb-8">
             <div class="mb-4 sm:mb-0">
                 <h1 class="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">
-                    {{ __('Almacenes') }}
+                    {{ __('Prefijos de Proyecto') }}
                 </h1>
             </div>
 
             <div class="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
-                <form action="{{ route('warehouses.index') }}" method="GET" class="relative flex items-center">
+                <form action="{{ route('project-prefixes.index') }}" method="GET" class="relative flex items-center">
                     <label for="action-search" class="sr-only">Search</label>
                     <input
                         id="action-search"
                         name="search"
                         class="form-input pl-9 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-violet-300 rounded-lg"
                         type="search"
-                        placeholder="{{ __('Buscar por nombre o código...') }}"
+                        placeholder="{{ __('Buscar por código o descripción...') }}"
                         value="{{ request('search') }}"
                     />
                     <button class="absolute inset-0 right-auto group" type="submit" aria-label="Search">
@@ -26,11 +26,19 @@
                         </svg>
                     </button>
                     @if(request('search'))
-                        <a href="{{ route('warehouses.index') }}" class="ml-2 text-sm text-gray-500 hover:text-violet-500 underline whitespace-nowrap">
+                        <a href="{{ route('project-prefixes.index') }}" class="ml-2 text-sm text-gray-500 hover:text-violet-500 underline whitespace-nowrap">
                             {{ __('Limpiar') }}
                         </a>
                     @endif
                 </form>
+
+                <a href="{{ route('project-prefixes.create') }}"
+                   class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white">
+                    <svg class="fill-current shrink-0 mr-2" width="16" height="16" viewBox="0 0 16 16">
+                        <path d="M15 7H9V1c0-.6-.4-1-1-1S7 .4 7 1v6H1c-.6 0-1 .4-1 1s.4 1 1 1h6v6c0 .6.4 1 1 1s1-.4 1-1V9h6c.6 0 1-.4 1-1s-.4-1-1-1z" />
+                    </svg>
+                    {{ __('Nuevo Prefijo') }}
+                </a>
             </div>
         </div>
 
@@ -49,10 +57,10 @@
                                 <div class="font-semibold text-left">{{ __('Código') }}</div>
                             </th>
                             <th class="px-5 py-3 whitespace-nowrap">
-                                <div class="font-semibold text-left">{{ __('Nombre') }}</div>
+                                <div class="font-semibold text-left">{{ __('Proyecto') }}</div>
                             </th>
                             <th class="px-5 py-3 whitespace-nowrap">
-                                <div class="font-semibold text-left">{{ __('Capacidad Total') }}</div>
+                                <div class="font-semibold text-left">{{ __('Descripción') }}</div>
                             </th>
                             <th class="px-5 py-3 whitespace-nowrap">
                                 <div class="font-semibold text-left">{{ __('Estado') }}</div>
@@ -63,36 +71,32 @@
                         </tr>
                     </thead>
                     <tbody class="text-sm divide-y divide-gray-100 dark:divide-gray-700/60">
-                        @forelse ($warehouses as $warehouse)
+                        @forelse ($prefixes as $prefix)
+                            @php
+                                $statusMap = [
+                                    'ACTIVE'   => ['label' => 'Activo',   'class' => 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'],
+                                    'INACTIVE' => ['label' => 'Inactivo', 'class' => 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'],
+                                ];
+                                $status = $statusMap[$prefix->status] ?? ['label' => $prefix->status, 'class' => 'bg-gray-100 text-gray-600'];
+                            @endphp
                             <tr>
                                 <td class="px-5 py-3 whitespace-nowrap">
-                                    <span class="font-medium text-gray-800 dark:text-gray-100">{{ $warehouse->code }}</span>
+                                    <span class="font-medium text-gray-800 dark:text-gray-100">{{ $prefix->code }}</span>
                                 </td>
                                 <td class="px-5 py-3 whitespace-nowrap">
-                                    <span class="text-gray-600 dark:text-gray-400">{{ $warehouse->name }}</span>
+                                    <span class="text-gray-600 dark:text-gray-400">{{ $prefix->project->model ?? '—' }}</span>
+                                </td>
+                                <td class="px-5 py-3">
+                                    <span class="text-gray-600 dark:text-gray-400">{{ $prefix->description ?? '—' }}</span>
                                 </td>
                                 <td class="px-5 py-3 whitespace-nowrap">
-                                    <span class="text-gray-600 dark:text-gray-400">
-                                        {{ $warehouse->total_capacity !== null ? number_format($warehouse->total_capacity, 2) : '—' }}
-                                    </span>
-                                </td>
-                                <td class="px-5 py-3 whitespace-nowrap">
-                                    @php
-                                        $statusMap = [
-                                            'OPERATIONAL' => ['label' => 'Operativo',      'class' => 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'],
-                                            'MAINTENANCE' => ['label' => 'Mantenimiento',  'class' => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400'],
-                                            'CLOSED'      => ['label' => 'Cerrado',         'class' => 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'],
-                                            'INACTIVE'    => ['label' => 'Inactivo',        'class' => 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'],
-                                        ];
-                                        $status = $statusMap[$warehouse->status] ?? ['label' => $warehouse->status, 'class' => 'bg-gray-100 text-gray-600'];
-                                    @endphp
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $status['class'] }}">
                                         {{ $status['label'] }}
                                     </span>
                                 </td>
                                 <td class="px-5 py-3 whitespace-nowrap text-right">
                                     <div class="flex justify-end gap-3">
-                                        <a href="{{ route('warehouses.show', $warehouse) }}"
+                                        <a href="{{ route('project-prefixes.show', $prefix) }}"
                                            class="inline-flex items-center gap-1 font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400 text-sm">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
@@ -100,7 +104,7 @@
                                             </svg>
                                             {{ __('Ver') }}
                                         </a>
-                                        <a href="{{ route('warehouses.edit', $warehouse) }}"
+                                        <a href="{{ route('project-prefixes.edit', $prefix) }}"
                                            class="inline-flex items-center gap-1 font-medium text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 text-sm">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
@@ -113,7 +117,7 @@
                         @empty
                             <tr>
                                 <td colspan="5" class="px-5 py-10 text-center text-gray-500 dark:text-gray-400 text-sm">
-                                    {{ __('No se han encontrado almacenes que coincidan con tu búsqueda.') }}
+                                    {{ __('No se han encontrado prefijos que coincidan con tu búsqueda.') }}
                                 </td>
                             </tr>
                         @endforelse
@@ -121,20 +125,20 @@
                 </table>
             </div>
 
-            @if ($warehouses->hasPages() || $warehouses->total() > 0)
+            @if ($prefixes->hasPages() || $prefixes->total() > 0)
                 <div class="px-5 py-4 border-t border-gray-100 dark:border-gray-700/60">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div class="text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">
                             {{ __('Mostrando') }}
-                            <span class="font-medium text-gray-800 dark:text-gray-100">{{ $warehouses->firstItem() ?? 0 }}</span>
+                            <span class="font-medium text-gray-800 dark:text-gray-100">{{ $prefixes->firstItem() ?? 0 }}</span>
                             {{ __('a') }}
-                            <span class="font-medium text-gray-800 dark:text-gray-100">{{ $warehouses->lastItem() ?? 0 }}</span>
+                            <span class="font-medium text-gray-800 dark:text-gray-100">{{ $prefixes->lastItem() ?? 0 }}</span>
                             {{ __('de') }}
-                            <span class="font-medium text-gray-800 dark:text-gray-100">{{ $warehouses->total() }}</span>
+                            <span class="font-medium text-gray-800 dark:text-gray-100">{{ $prefixes->total() }}</span>
                             {{ __('resultados') }}
                         </div>
                         <div class="flex justify-center sm:justify-end">
-                            {{ $warehouses->links('pagination::simple-tailwind') }}
+                            {{ $prefixes->links('pagination::simple-tailwind') }}
                         </div>
                     </div>
                 </div>

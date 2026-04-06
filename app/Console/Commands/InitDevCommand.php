@@ -47,6 +47,11 @@ class InitDevCommand extends Command
             'info'    => 'Corriendo MeasurementUnitSeeder...'
         ],
         [
+            'command' => 'db:seed',
+            'params'  => ['--class' => 'ItemTypeSeeder'],
+            'info'    => 'Sincronizando tipos de artículo...'
+        ],
+        [
             'command' => 'sync:item-classes',
             'params'  => [],
             'info'    => 'Sincronizando clases de artículos...'
@@ -61,7 +66,11 @@ class InitDevCommand extends Command
             'params'  => [],
             'info'    => 'Sincronizando ubicaciones...'
         ],
-
+        [
+            'command' => 'sync:items',
+            'params'  => [],
+            'info'    => 'Sincronizando artículos...'
+        ]
     ];
 
     /**
