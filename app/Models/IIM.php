@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class IIM extends Model
 {
-        protected $connection = 'infor-live';
+    protected $connection = 'infor-live';
     protected $table = 'LX834F01.IIM';
 
     protected $fillable = [

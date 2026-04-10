@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Item;
 use App\Models\ItemClass;
+use App\Models\ItemType;
 use App\Models\MeasurementUnit;
 use App\Models\PackingSpecification;
 use App\Models\Project;
@@ -17,6 +18,7 @@ class StoreItemJob implements ShouldQueue
     protected $partNumber;
     protected $partName;
     protected $measurementUnit;
+    protected $itemType;
     protected $itemClass;
     protected $project;
     protected $isObsolete;
@@ -26,11 +28,12 @@ class StoreItemJob implements ShouldQueue
     /**
      * Create a new job instance.
      */
-    public function __construct($partNumber, $partName, $measurementUnit, $itemClass, $project, $isObsolete, $standardPack, $quantityStandardPack)
+    public function __construct($partNumber, $partName, $measurementUnit, $itemType, $itemClass, $project, $isObsolete, $standardPack, $quantityStandardPack)
     {
         $this->partNumber =  $partNumber;
         $this->partName =  $partName;
         $this->measurementUnit =  $measurementUnit;
+        $this->itemType =  $itemType;
         $this->itemClass =  $itemClass;
         $this->project =  $project;
         $this->isObsolete = $isObsolete;
@@ -43,6 +46,7 @@ class StoreItemJob implements ShouldQueue
      */
     public function handle(): void
     {
+        $itemType = ItemType::query()->where('code', $this->itemType)->first();
         $itemClass = ItemClass::query()->where('code', $this->itemClass)->first();
         $packingSpec = PackingSpecification::firstOrCreate(['name' => $this->standardPack, 'quantity' => (int) $this->quantityStandardPack]);
         $measurementUnit = MeasurementUnit::query()->where('code', $this->measurementUnit)->first();
@@ -52,7 +56,8 @@ class StoreItemJob implements ShouldQueue
             $item->update([
                 'code' => $this->partNumber,
                 'description' => $this->partName,
-                'item_class_id' => $itemClass->id,
+                'item_class_id' => $itemClass ? $itemClass->id : null,
+                'item_type_id' => $itemType ? $itemType->id : null,
                 'measurement_unit_id' => $measurementUnit ? $measurementUnit->id : null,
                 'packing_specification_id' => $packingSpec ? $packingSpec->id : null,
                 'active' => ($this->isObsolete == "OBSOLETE") ? false : true,
@@ -61,7 +66,8 @@ class StoreItemJob implements ShouldQueue
             $item = Item::create([
                 'code' => $this->partNumber,
                 'description' => $this->partName,
-                'item_class_id' => $itemClass->id,
+                'item_class_id' => $itemClass ? $itemClass->id : null,
+                'item_type_id' => $itemType ? $itemType->id : null,
                 'measurement_unit_id' => $measurementUnit ? $measurementUnit->id : null,
                 'packing_specification_id' => $packingSpec ? $packingSpec->id : null,
                 'active' => ($this->isObsolete == "OBSOLETE") ? false : true,

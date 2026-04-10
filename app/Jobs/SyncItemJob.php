@@ -24,7 +24,7 @@ class SyncItemJob implements ShouldQueue
     public function handle(): void
     {
         $items = IIM::query()
-            ->select('IPROD AS partNumber', 'IDESC AS partName', 'IUMS AS measurementUnit', 'ICLAS AS itemClass', 'IREF04 AS project', 'IMPLC AS isObsolete', 'IMSPKT AS standardPack', 'IMBOXQ AS quantityStandardPack')
+            ->select('IPROD AS partNumber', 'IDESC AS partName', 'IUMS AS measurementUnit','IITYP AS itemType', 'ICLAS AS itemClass', 'IREF04 AS project', 'IMPLC AS isObsolete', 'IMSPKT AS standardPack', 'IMBOXQ AS quantityStandardPack')
             // ->where('IMPLC', 'LIKE', 'OBSOLETE  ')
             ->get();
 
@@ -33,6 +33,7 @@ class SyncItemJob implements ShouldQueue
                 preg_replace('/[^a-zA-Z0-9\/\-\s]/', '', trim($item->partNumber)),
                 preg_replace('/[^a-zA-Z0-9\/\-\s]/', '', trim($item->partName)),
                 trim($item->measurementUnit),
+                trim($item->itemType),
                 trim($item->itemClass),
                 trim($item->project),
                 trim($item->isObsolete),

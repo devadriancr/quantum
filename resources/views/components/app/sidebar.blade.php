@@ -42,8 +42,8 @@
                     <span class="lg:hidden lg:sidebar-expanded:block 2xl:block">Pages</span>
                 </h3>
                 <!-- Administración -->
-                <li class="pl-4 pr-3 py-2 rounded-lg mb-0.5 last:mb-0 bg-linear-to-r @if(in_array(Request::segment(1), ['item-types', 'item-classes', 'measurement-units', 'warehouses', 'locations', 'partners', 'projects', 'project-prefixes', 'items'])){{ 'from-violet-500/[0.12] dark:from-violet-500/[0.24] to-violet-500/[0.04]' }}@endif"
-                    x-data="{ open: {{ in_array(Request::segment(1), ['item-types', 'item-classes', 'measurement-units', 'warehouses', 'locations', 'partners', 'projects', 'project-prefixes', 'items']) ? 1 : 0 }} }">
+                <li class="pl-4 pr-3 py-2 rounded-lg mb-0.5 last:mb-0 bg-linear-to-r @if(in_array(Request::segment(1), ['item-types', 'item-classes', 'measurement-units', 'warehouses', 'locations', 'partners', 'projects', 'project-prefixes', 'items', 'packing-specifications', 'transaction-types'])){{ 'from-violet-500/[0.12] dark:from-violet-500/[0.24] to-violet-500/[0.04]' }}@endif"
+                    x-data="{ open: {{ in_array(Request::segment(1), ['item-types', 'item-classes', 'measurement-units', 'warehouses', 'locations', 'partners', 'projects', 'project-prefixes', 'items', 'packing-specifications', 'transaction-types']) ? 1 : 0 }} }">
 
                     <a class="block text-gray-800 dark:text-gray-100 truncate transition @if(!in_array(Request::segment(1), ['item-types', 'item-classes', 'measurement-units', 'warehouses', 'locations', 'partners', 'projects', 'project-prefixes', 'items'])){{ 'hover:text-gray-900 dark:hover:text-white' }}@endif"
                     href="#0" @click.prevent="open = !open; sidebarExpanded = true">
@@ -66,7 +66,7 @@
                     </a>
 
                     <div class="lg:hidden lg:sidebar-expanded:block 2xl:block">
-                        <ul class="pl-8 mt-1 @if(!in_array(Request::segment(1), ['item-types', 'item-classes', 'measurement-units', 'warehouses', 'locations', 'partners', 'projects', 'project-prefixes', 'items'])){{ 'hidden' }}@endif"
+                        <ul class="pl-8 mt-1 @if(!in_array(Request::segment(1), ['item-types', 'item-classes', 'measurement-units', 'warehouses', 'locations', 'partners', 'projects', 'project-prefixes', 'items', 'packing-specifications', 'transaction-types'])){{ 'hidden' }}@endif"
                             :class="open ? 'block!' : 'hidden'">
 
                             <!-- Almacenes -->
@@ -104,6 +104,19 @@
                                     </svg>
                                     <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
                                         {{ __('Clases de Artículos') }}
+                                    </span>
+                                </a>
+                            </li>
+
+                            <!-- Especificaciones de Empaque -->
+                            <li class="mb-1 last:mb-0">
+                                <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition truncate @if(Request::segment(1) === 'packing-specifications'){{ 'text-violet-500!' }}@endif"
+                                href="{{ route('packing-specifications.index') }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 shrink-0">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0-3-3m3 3 3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                                    </svg>
+                                    <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
+                                        {{ __('Especificaciones de Empaque') }}
                                     </span>
                                 </a>
                             </li>
@@ -157,6 +170,19 @@
                                     </svg>
                                     <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
                                         {{ __('Tipos de Artículos') }}
+                                    </span>
+                                </a>
+                            </li>
+
+                            <!-- Tipos de Transacción -->
+                            <li class="mb-1 last:mb-0">
+                                <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition truncate @if(Request::segment(1) === 'transaction-types'){{ 'text-violet-500!' }}@endif"
+                                href="{{ route('transaction-types.index') }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 shrink-0">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" />
+                                    </svg>
+                                    <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
+                                        {{ __('Tipos de Transacción') }}
                                     </span>
                                 </a>
                             </li>

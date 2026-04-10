@@ -6,7 +6,7 @@
                 <h1 class="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">{{ __('Editar Especificación de Empaque') }}</h1>
             </div>
             <div class="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
-                <a href="{{ route('packing-specifications.show', $packingSpecification) }}"
+                <a href="{{ route('packing-specifications.index') }}"
                    class="btn bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-600 dark:text-gray-300">
                     &larr; {{ __('Regresar') }}
                 </a>
@@ -80,7 +80,7 @@
 
                 <div class="px-5 pb-5">
                     <div class="flex justify-end pt-5 border-t border-gray-100 dark:border-gray-700/60 gap-3">
-                        <a href="{{ route('packing-specifications.show', $packingSpecification) }}"
+                        <a href="{{ route('packing-specifications.index') }}"
                            class="btn bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-600 dark:text-gray-300">
                             {{ __('Cancelar') }}
                         </a>

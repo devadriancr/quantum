@@ -19,6 +19,7 @@ use App\Http\Controllers\PackingSpecificationController;
 use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectPrefixController;
+use App\Http\Controllers\TransactionTypeController;
 use App\Http\Controllers\WarehouseController;
 
 /*
@@ -52,6 +53,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::resource('project-prefixes', ProjectPrefixController::class);
     Route::resource('items', ItemController::class);
     Route::resource('packing-specifications', PackingSpecificationController::class);
+    Route::resource('transaction-types', TransactionTypeController::class);
     Route::get('/ecommerce/customers', [CustomerController::class, 'index'])->name('customers');
     Route::get('/ecommerce/orders', [OrderController::class, 'index'])->name('orders');
     Route::get('/ecommerce/invoices', [InvoiceController::class, 'index'])->name('invoices');

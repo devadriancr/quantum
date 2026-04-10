@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Traits\Blameable;
 use Illuminate\Database\Eloquent\Model;
 
 class Partner extends Model
 {
-    use \App\Models\Traits\Blameable;
+    use Blameable;
 
     protected $fillable = [
         'code',
