@@ -9,6 +9,12 @@ class Partner extends Model
 {
     use Blameable;
 
+    public const PARTNER_TYPES = [
+        'CUSTOMER' => 'Cliente',
+        'SUPPLIER' => 'Proveedor',
+        'BOTH' => 'Ambos',
+    ];
+
     protected $fillable = [
         'code',
         'name',

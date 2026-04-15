@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('code')->unique();
             $table->string('name');
-            $table->enum('partner_type', ['supplier', 'customer', 'both']);
+            $table->enum('partner_type', ['SUPPLIER', 'CUSTOMER', 'BOTH']);
             $table->string('contact_email')->nullable();
             $table->string('contact_phone')->nullable();
             $table->string('address')->nullable();

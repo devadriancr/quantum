@@ -13,9 +13,9 @@ class PartnerSeeder extends Seeder
      */
     public function run(): void
     {
-        Partner::create(['code' => '200000', 'name' => 'MMVO', 'partner_type' =>'customer']);
-        Partner::create(['code' => '400403', 'name' => 'TOYOTA', 'partner_type' =>'customer']);
-        Partner::create(['code' => '200700', 'name' => 'MNAO', 'partner_type' =>'customer']);
-        Partner::create(['code' => '400501', 'name' => 'F&P', 'partner_type' =>'customer']);
+        Partner::create(['code' => '200000', 'name' => 'MMVO', 'partner_type' =>'CUSTOMER']);
+        Partner::create(['code' => '400403', 'name' => 'TOYOTA', 'partner_type' =>'CUSTOMER']);
+        Partner::create(['code' => '200700', 'name' => 'MNAO', 'partner_type' =>'CUSTOMER']);
+        Partner::create(['code' => '400501', 'name' => 'F&P', 'partner_type' =>'CUSTOMER']);
     }
 }

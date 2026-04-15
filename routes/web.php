@@ -17,6 +17,7 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MeasurementUnitController;
 use App\Http\Controllers\PackingSpecificationController;
 use App\Http\Controllers\PartnerController;
+use App\Http\Controllers\ContainerController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectPrefixController;
 use App\Http\Controllers\TransactionTypeController;
@@ -54,6 +55,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::resource('items', ItemController::class);
     Route::resource('packing-specifications', PackingSpecificationController::class);
     Route::resource('transaction-types', TransactionTypeController::class);
+    Route::resource('containers', ContainerController::class);
     Route::get('/ecommerce/customers', [CustomerController::class, 'index'])->name('customers');
     Route::get('/ecommerce/orders', [OrderController::class, 'index'])->name('orders');
     Route::get('/ecommerce/invoices', [InvoiceController::class, 'index'])->name('invoices');

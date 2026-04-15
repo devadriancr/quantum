@@ -72,7 +72,7 @@ class InitDevCommand extends Command
             'info'    => 'Sincronizando artículos...'
         ],
         [
-            'command' => 'sync:transaction-types',
+            'command' => 'sync:transaction-type',
             'params'  => [],
             'info'    => 'Sincronizando tipo de transacciones...'
         ]
