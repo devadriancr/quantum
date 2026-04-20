@@ -75,6 +75,11 @@ class InitDevCommand extends Command
             'command' => 'sync:transaction-type',
             'params'  => [],
             'info'    => 'Sincronizando tipo de transacciones...'
+        ],
+        [
+            'command' => 'db:seed',
+            'params'  => ['--class' => 'ContainerDataSeeder'],
+            'info'    => 'Corriendo contenedores...'
         ]
     ];
 

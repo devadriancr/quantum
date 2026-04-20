@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ShipmentDocumentLine extends Model
 {
+
+    use HasFactory;
+
     public const STATUS_OPTIONS = [
         'PENDING' => 'Pendiente',
         'RECEIVED' => 'Recibido',
@@ -23,7 +27,7 @@ class ShipmentDocumentLine extends Model
         'status'
     ];
 
-    public function shippingDocument()
+    public function shipmentDocument()
     {
         return $this->belongsTo(ShipmentDocument::class, 'shipment_document_id');
     }

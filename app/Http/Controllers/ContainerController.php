@@ -48,12 +48,13 @@ class ContainerController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Container $container)
+    public function show($id)
     {
-        $container->load([
+        $container = Container::with([
             'partner',
-            'shippingDocuments.lines.item',
-        ]);
+            'shipmentDocuments.shipmentDocumentLines',
+            'shipmentDocuments.shipmentDocumentLines.item'
+        ])->findOrFail($id);
 
         return view('containers.show', compact('container'));
     }
