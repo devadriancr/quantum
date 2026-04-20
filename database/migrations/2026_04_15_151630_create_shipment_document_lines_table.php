@@ -17,7 +17,7 @@ return new class extends Migration
             $table->integer('line_number');
             $table->foreignId('item_id')->constrained('items');
             $table->string('serial_number')->nullable();
-            $table->decimal('quantity_received', 10, 2)->default(0);
+            $table->decimal('quantity_declared', 10, 2)->default(0);
             $table->enum('status', ['PENDING', 'RECEIVED', 'DAMAGED', 'EXPECTED', 'DISCREPANCY'])->default('PENDING');
             $table->timestamps();
         });

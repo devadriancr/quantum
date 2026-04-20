@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('containers', function (Blueprint $table) {
             $table->id();
             $table->string('code');
-            $table->foreignId('partner_id')->constrained('partners');
+            $table->foreignId('partner_id')->nullable()->constrained('partners');
             $table->enum('container_type', ['TRUCK', 'CONTAINER', 'BOX', 'PALLET', 'OTHER']);
             $table->date('estimated_arrival_date')->nullable();
             $table->time('estimated_arrival_time')->nullable();

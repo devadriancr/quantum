@@ -23,7 +23,7 @@ class ShipmentDocumentLine extends Model
         'line_number',
         'item_id',
         'serial_number',
-        'quantity_received',
+        'quantity_declared',
         'status'
     ];
 

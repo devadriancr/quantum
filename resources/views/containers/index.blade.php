@@ -32,6 +32,16 @@
                         </a>
                     @endif
                 </form>
+
+                {{-- Botón Importar Excel --}}
+                <button
+                    onclick="document.getElementById('modal-import').classList.remove('hidden')"
+                    class="btn bg-violet-500 hover:bg-violet-600 text-white inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                    </svg>
+                    {{ __('Importar Excel') }}
+                </button>
             </div>
         </div>
 
@@ -44,6 +54,16 @@
         @if (session('error'))
             <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">
                 {{ session('error') }}
+            </div>
+        @endif
+        @if (session('import_warnings'))
+            <div class="bg-yellow-50 border border-yellow-300 text-yellow-800 px-4 py-3 rounded-lg mb-6 text-sm">
+                <p class="font-semibold mb-1">⚠️ Advertencias durante la importación:</p>
+                <ul class="list-disc list-inside space-y-0.5">
+                    @foreach(session('import_warnings') as $warning)
+                        <li>{{ $warning }}</li>
+                    @endforeach
+                </ul>
             </div>
         @endif
 
@@ -145,11 +165,11 @@
                                         @endif
 
                                         {{-- Eliminar --}}
-                                        <form action="{{ route('containers.destroy', $container) }}" method="POST"
-                                              onsubmit="return confirm('¿Estás seguro de eliminar el contenedor {{ $container->code }}? Esta acción también eliminará todos sus documentos y líneas.')">
+                                        <form action="{{ route('containers.destroy', $container) }}" method="POST" id="form-delete-{{ $container->id }}">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit"
+                                            <button type="button"
+                                                    onclick="confirmDelete({{ $container->id }}, '{{ $container->code }}')"
                                                     class="inline-flex items-center gap-1 font-medium text-red-500 hover:text-red-600 dark:hover:text-red-400 text-sm">
                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
@@ -193,4 +213,100 @@
         </div>
 
     </div>
+
+    {{-- ================================================ --}}
+    {{-- Modal Importar Excel                             --}}
+    {{-- ================================================ --}}
+    <div id="modal-import" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+
+            <div class="flex items-center justify-between mb-5">
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                    {{ __('Importar contenedores desde Excel') }}
+                </h2>
+                <button
+                    onclick="document.getElementById('modal-import').classList.add('hidden')"
+                    class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <form action="{{ route('containers.import') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+
+                <div class="mb-5">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {{ __('Archivo Excel') }} <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="file"
+                        name="excel_file"
+                        accept=".xlsx,.xls,.csv"
+                        required
+                        class="block w-full text-sm text-gray-700 dark:text-gray-300
+                               file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0
+                               file:text-sm file:font-semibold
+                               file:bg-violet-50 file:text-violet-700
+                               hover:file:bg-violet-100 dark:file:bg-violet-500/20 dark:file:text-violet-300
+                               border border-gray-200 dark:border-gray-700 rounded-lg p-1 bg-white dark:bg-gray-900"
+                    />
+                    {{-- <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                        Columnas requeridas:
+                        <strong class="text-gray-600 dark:text-gray-300">
+                            CT NO., MODULE NO., PARTS NO., PARTS QTY, DELIVERY DATE, DELIVERY TIME
+                        </strong>
+                    </p> --}}
+                </div>
+
+                <div class="flex justify-end gap-3">
+                    <button
+                        type="button"
+                        onclick="document.getElementById('modal-import').classList.add('hidden')"
+                        class="px-4 py-2 rounded-lg text-sm font-medium border border-gray-300 dark:border-gray-600
+                               text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        {{ __('Cancelar') }}
+                    </button>
+                    <button
+                        type="submit"
+                        class="px-4 py-2 rounded-lg text-sm font-medium bg-violet-500 hover:bg-violet-600
+                               text-white shadow-sm transition-colors">
+                        {{ __('Importar') }}
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+    {{-- Script de SweetAlert2 --}}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function confirmDelete(id, code) {
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: `Se eliminará el contenedor ${code} y todos sus documentos y líneas asociadas. Esta acción no se puede revertir.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+                background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
+                color: document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#1f2937',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('form-delete-' + id).submit();
+                }
+            })
+        }
+
+        // Cerrar modal al hacer clic fuera de él
+        document.getElementById('modal-import').addEventListener('click', function (e) {
+            if (e.target === this) {
+                this.classList.add('hidden');
+            }
+        });
+    </script>
 </x-app-layout>
