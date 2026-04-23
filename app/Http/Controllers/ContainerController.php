@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Imports\ContainersImport;
 use App\Models\Container;
+use App\Models\Item;
 use App\Models\Partner;
 use App\Models\ShipmentDocumentLine;
 use Illuminate\Http\Request;
@@ -12,9 +13,6 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ContainerController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
         $search = $request->input('search');
@@ -31,25 +29,76 @@ class ContainerController extends Controller
         return view('containers.index', compact('containers'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        //
+        $partners = Partner::orderBy('name')->get();
+
+        return view('containers.create', compact('partners'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'code'                   => 'required|string|max:255',
+            'partner_id'             => 'nullable|exists:partners,id',
+            'container_type'         => 'required|in:' . implode(',', array_keys(Container::TYPE_OPTIONS)),
+            'estimated_arrival_date' => 'nullable|date',
+            'estimated_arrival_time' => 'nullable|date_format:H:i',
+            'notes'                  => 'nullable|string',
+            'lines'                  => 'nullable|array',
+            'lines.*.item_code'      => 'required|string|exists:items,code',
+            'lines.*.quantity'       => 'required|numeric|min:0.01',
+        ], [
+            'lines.*.item_code.exists'   => 'El artículo ":input" no existe en el catálogo.',
+            'lines.*.item_code.required' => 'El código de artículo es obligatorio.',
+            'lines.*.quantity.required'  => 'La cantidad es obligatoria.',
+            'lines.*.quantity.min'       => 'La cantidad debe ser mayor a cero.',
+        ]);
+
+        $container = null;
+
+        DB::transaction(function () use ($request, &$container) {
+            $container = Container::create([
+                'code'                   => $request->code,
+                'partner_id'             => $request->partner_id,
+                'container_type'         => $request->container_type,
+                'estimated_arrival_date' => $request->estimated_arrival_date,
+                'estimated_arrival_time' => $request->estimated_arrival_time,
+                'notes'                  => $request->notes,
+                'status'                 => 'PENDING',
+            ]);
+
+            $document = $container->shipmentDocuments()->create([
+                'partner_id'             => $container->partner_id,
+                'document_number'        => 'DOC-' . $container->code,
+                'document_date'          => $container->estimated_arrival_date ?? now()->toDateString(),
+                'document_time'          => $container->estimated_arrival_time,
+                'estimated_arrival_date' => $container->estimated_arrival_date,
+                'estimated_arrival_time' => $container->estimated_arrival_time,
+                'document_status'        => 'PENDING',
+            ]);
+
+            $lineNumber = 0;
+            foreach (($request->lines ?? []) as $lineData) {
+                $item = Item::where('code', $lineData['item_code'])->first();
+                if (! $item) continue;
+
+                $lineNumber++;
+                $document->shipmentDocumentLines()->create([
+                    'line_number'       => $lineNumber,
+                    'item_id'           => $item->id,
+                    'serial_number'     => null,
+                    'quantity_declared' => $lineData['quantity'],
+                    'status'            => 'PENDING',
+                ]);
+            }
+        });
+
+        return redirect()
+            ->route('containers.show', $container)
+            ->with('success', 'Contenedor y documento creados correctamente.');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Request $request, $id)
     {
         $search = $request->input('search_lines');
@@ -57,7 +106,6 @@ class ContainerController extends Controller
         $container = Container::with([
             'partner',
             'shipmentDocuments' => function ($query) use ($search) {
-                // Cargamos las líneas filtradas
                 $query->with(['shipmentDocumentLines' => function ($lineQuery) use ($search) {
                     $lineQuery->when($search, function ($q) use ($search) {
                         $q->where('serial_number', 'like', "%{$search}%")
@@ -73,9 +121,6 @@ class ContainerController extends Controller
         return view('containers.show', compact('container', 'search'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Container $container)
     {
         if ($container->status !== 'PENDING') {
@@ -89,9 +134,6 @@ class ContainerController extends Controller
         return view('containers.edit', compact('container', 'partners'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Container $container)
     {
         if ($container->status !== 'PENDING') {
@@ -111,7 +153,6 @@ class ContainerController extends Controller
 
         $container->update($validated);
 
-        // Sincronizar los documentos asociados al contenedor
         $container->shipmentDocuments()->update([
             'partner_id'             => $validated['partner_id'] ?? null,
             'document_date'          => $validated['estimated_arrival_date'] ?? null,
@@ -125,9 +166,6 @@ class ContainerController extends Controller
             ->with('success', 'Contenedor y documentos actualizados correctamente.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Container $container)
     {
         foreach ($container->shipmentDocuments as $document) {

@@ -2,30 +2,29 @@
 
 namespace App\Models;
 
-use App\Models\ShipmentDocument;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Traits\Blameable;
 use Illuminate\Database\Eloquent\Model;
 
 class Container extends Model
 {
-    use HasFactory;
+    use Blameable;
 
     public const TYPE_OPTIONS = [
-        'TRUCK' => 'Camión',
+        'TRUCK'     => 'Camión',
         'CONTAINER' => 'Contenedor',
-        'BOX' => 'Caja',
-        'PALLET' => 'Tarima',
-        'OTHER' => 'Otro',
+        'BOX'       => 'Caja',
+        'PALLET'    => 'Tarima',
+        'OTHER'     => 'Otro',
     ];
 
     public const STATUS_OPTIONS = [
-        'PENDING' => 'Pendiente',
-        'EXPECTED' => 'Esperado',
-        'ARRIVED' => 'Llegado',
-        'UNLOADING' => 'Descargando',
+        'PENDING'    => 'Pendiente',
+        'EXPECTED'   => 'Esperado',
+        'ARRIVED'    => 'Llegado',
+        'UNLOADING'  => 'Descargando',
         'INSPECTION' => 'Inspección',
-        'RECEIVED' => 'Recibido',
-        'REJECTED' => 'Rechazado',
+        'RECEIVED'   => 'Recibido',
+        'REJECTED'   => 'Rechazado',
         'IN_TRANSIT' => 'En tránsito',
     ];
 
@@ -39,6 +38,8 @@ class Container extends Model
         'actual_arrival_time',
         'notes',
         'status',
+        'created_by_user_id',
+        'updated_by_user_id',
     ];
 
     public function partner()
@@ -49,5 +50,20 @@ class Container extends Model
     public function shipmentDocuments()
     {
         return $this->hasMany(ShipmentDocument::class);
+    }
+
+    public function stockMovements()
+    {
+        return $this->hasMany(StockMovement::class);
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
+    public function updatedBy()
+    {
+        return $this->belongsTo(User::class, 'updated_by_user_id');
     }
 }

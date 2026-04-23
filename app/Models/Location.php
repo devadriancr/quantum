@@ -26,4 +26,19 @@ class Location extends Model
     {
         return $this->belongsTo(Warehouse::class);
     }
+
+    public function inventoryBalances()
+    {
+        return $this->hasMany(InventoryBalance::class);
+    }
+
+    public function stockMovementsFrom()
+    {
+        return $this->hasMany(StockMovement::class, 'location_id_from');
+    }
+
+    public function stockMovementsTo()
+    {
+        return $this->hasMany(StockMovement::class, 'location_id_to');
+    }
 }

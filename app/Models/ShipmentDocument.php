@@ -2,19 +2,19 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Traits\Blameable;
 use Illuminate\Database\Eloquent\Model;
 
 class ShipmentDocument extends Model
 {
-    use HasFactory;
+    use Blameable;
 
     public const STATUS_OPTIONS = [
-        'PENDING' => 'Pendiente',
-        'RECEIVED' => 'Recibido',
-        'PROCESSED' => 'Procesado',
-        'PARTIAL' => 'Parcial',
-        'COMPLETE' => 'Completo',
+        'PENDING'     => 'Pendiente',
+        'RECEIVED'    => 'Recibido',
+        'PROCESSED'   => 'Procesado',
+        'PARTIAL'     => 'Parcial',
+        'COMPLETE'    => 'Completo',
         'DISCREPANCY' => 'Discrepancia',
     ];
 
@@ -28,6 +28,8 @@ class ShipmentDocument extends Model
         'estimated_arrival_time',
         'document_status',
         'notes',
+        'created_by_user_id',
+        'updated_by_user_id',
     ];
 
     public function container()
@@ -43,5 +45,25 @@ class ShipmentDocument extends Model
     public function shipmentDocumentLines()
     {
         return $this->hasMany(ShipmentDocumentLine::class, 'shipment_document_id');
+    }
+
+    public function stockMovements()
+    {
+        return $this->hasMany(StockMovement::class);
+    }
+
+    public function receptionScans()
+    {
+        return $this->hasMany(ReceptionScan::class);
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
+    public function updatedBy()
+    {
+        return $this->belongsTo(User::class, 'updated_by_user_id');
     }
 }

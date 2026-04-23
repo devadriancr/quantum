@@ -21,6 +21,10 @@ return new class extends Migration
             $table->date('estimated_arrival_date')->nullable();
             $table->time('estimated_arrival_time')->nullable();
             $table->enum('document_status', ['PENDING', 'RECEIVED', 'PROCESSED', 'PARTIAL', 'COMPLETE', 'DISCREPANCY'])->default('PENDING');
+            $table->text('notes')->nullable();             // faltaba
+            $table->foreignId('created_by_user_id')->nullable()->constrained('users');
+            $table->foreignId('updated_by_user_id')->nullable()->constrained('users');
+
             $table->timestamps();
         });
     }

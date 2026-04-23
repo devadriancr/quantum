@@ -20,6 +20,8 @@ use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\ContainerController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectPrefixController;
+use App\Http\Controllers\ReceptionScanController;
+use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\TransactionTypeController;
 use App\Http\Controllers\WarehouseController;
 
@@ -57,8 +59,14 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::resource('transaction-types', TransactionTypeController::class);
     Route::resource('containers', ContainerController::class);
 
-    Route::post('containers/import', [ContainerController::class, 'import'])
-        ->name('containers.import');
+    Route::post('containers/import', [ContainerController::class, 'import'])->name('containers.import');
+
+    Route::get('/reception', [ReceptionScanController::class, 'index'])->name('reception.index');
+    Route::get('/reception/{shipmentDocument}/scan', [ReceptionScanController::class, 'show'])->name('reception.show');
+    Route::post('/reception/{shipmentDocument}/scan', [ReceptionScanController::class, 'scan'])->name('reception.scan');
+    Route::post('/reception/{shipmentDocument}/complete', [ReceptionScanController::class, 'complete'])->name('reception.complete');
+
+    Route::resource('stock-movements', StockMovementController::class)->only(['index', 'show']);
 
     Route::get('/ecommerce/customers', [CustomerController::class, 'index'])->name('customers');
     Route::get('/ecommerce/orders', [OrderController::class, 'index'])->name('orders');

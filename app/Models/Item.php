@@ -61,4 +61,19 @@ class Item extends Model
     {
         return $this->belongsToMany(Project::class, 'item_project', 'item_id', 'project_id');
     }
+
+    public function inventoryBalances()
+    {
+        return $this->hasMany(InventoryBalance::class);
+    }
+
+    public function stockMovementLines()
+    {
+        return $this->hasMany(StockMovementLine::class);
+    }
+
+    public function shipmentDocumentLines()
+    {
+        return $this->hasMany(ShipmentDocumentLine::class);
+    }
 }

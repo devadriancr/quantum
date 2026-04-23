@@ -22,6 +22,8 @@ return new class extends Migration
             $table->time('actual_arrival_time')->nullable();
             $table->text('notes')->nullable();
             $table->enum('status', ['PENDING', 'EXPECTED', 'ARRIVED', 'UNLOADING', 'INSPECTION', 'RECEIVED', 'REJECTED', 'IN_TRANSIT'])->default('PENDING');
+            $table->foreignId('created_by_user_id')->nullable()->constrained('users');
+            $table->foreignId('updated_by_user_id')->nullable()->constrained('users');
             $table->timestamps();
         });
     }

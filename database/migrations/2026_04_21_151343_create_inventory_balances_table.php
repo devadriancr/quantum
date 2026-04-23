@@ -11,16 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('shipment_document_lines', function (Blueprint $table) {
+        Schema::create('inventory_balances', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('shipment_document_id')->constrained('shipment_documents');
-            $table->integer('line_number');
             $table->foreignId('item_id')->constrained('items');
-            $table->string('serial_number')->nullable();
-            $table->decimal('quantity_declared', 10, 2)->default(0);
-            $table->decimal('quantity_received', 15, 2)->default(0);
-            $table->decimal('unit_cost', 15, 2)->nullable();
-            $table->enum('status', ['PENDING', 'RECEIVED', 'DAMAGED', 'EXPECTED', 'DISCREPANCY'])->default('PENDING');
+            $table->foreignId('location_id')->constrained('locations');
+            $table->unique(['item_id', 'location_id']);
+            $table->decimal('opening_quantity', 15, 2)->default(0);
+            $table->decimal('current_quantity', 15, 2)->default(0);
+            $table->decimal('reserved_quantity', 15, 2)->default(0);
+            $table->foreignId('last_movement_id')->nullable()->constrained('stock_movements');
+            $table->timestamp('last_movement_date')->nullable();
             $table->foreignId('created_by_user_id')->nullable()->constrained('users');
             $table->foreignId('updated_by_user_id')->nullable()->constrained('users');
             $table->timestamps();
@@ -32,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('shipment_document_lines');
+        Schema::dropIfExists('inventory_balances');
     }
 };

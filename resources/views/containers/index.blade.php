@@ -33,6 +33,15 @@
                     @endif
                 </form>
 
+                {{-- Botón Nuevo Contenedor --}}
+                <a href="{{ route('containers.create') }}"
+                   class="btn bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-white dark:text-gray-800 text-white inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    {{ __('Nuevo Contenedor') }}
+                </a>
+
                 {{-- Botón Importar Excel --}}
                 <button
                     onclick="document.getElementById('modal-import').classList.remove('hidden')"
