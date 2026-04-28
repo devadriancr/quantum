@@ -18,6 +18,12 @@ class ContainerController extends Controller
         $search = $request->input('search');
 
         $containers = Container::with('partner')
+            ->withCount('stockMovements')
+            // ->withExists([
+            //     'shipmentDocuments as has_registered_serials' => fn($q) => $q->whereHas(
+            //         'shipmentDocumentLines', fn($sub) => $sub->whereNotNull('serial_number')
+            //     ),
+            // ])
             ->when($search, function ($query, $search) {
                 $query->where('code', 'like', "%{$search}%")
                     ->orWhere('status', 'like', "%{$search}%");
@@ -25,6 +31,8 @@ class ContainerController extends Controller
             ->latest()
             ->paginate(10)
             ->withQueryString();
+
+        // dd($containers[0]->has_registered_serials);
 
         return view('containers.index', compact('containers'));
     }
@@ -55,6 +63,26 @@ class ContainerController extends Controller
             'lines.*.quantity.min'       => 'La cantidad debe ser mayor a cero.',
         ]);
 
+        // Prevenir duplicado: mismo código + fecha + hora
+        $duplicate = Container::where('code', $request->code)
+            ->where(function ($q) use ($request) {
+                $request->filled('estimated_arrival_date')
+                    ? $q->where('estimated_arrival_date', $request->estimated_arrival_date)
+                    : $q->whereNull('estimated_arrival_date');
+            })
+            ->where(function ($q) use ($request) {
+                $request->filled('estimated_arrival_time')
+                    ? $q->where('estimated_arrival_time', $request->estimated_arrival_time)
+                    : $q->whereNull('estimated_arrival_time');
+            })
+            ->exists();
+
+        if ($duplicate) {
+            return back()
+                ->withErrors(['code' => 'Ya existe un contenedor con el mismo código, fecha y hora de llegada.'])
+                ->withInput();
+        }
+
         $container = null;
 
         DB::transaction(function () use ($request, &$container) {
@@ -70,7 +98,7 @@ class ContainerController extends Controller
 
             $document = $container->shipmentDocuments()->create([
                 'partner_id'             => $container->partner_id,
-                'document_number'        => 'DOC-' . $container->code,
+                'document_number'        => $container->code,
                 'document_date'          => $container->estimated_arrival_date ?? now()->toDateString(),
                 'document_time'          => $container->estimated_arrival_time,
                 'estimated_arrival_date' => $container->estimated_arrival_date,
@@ -168,6 +196,28 @@ class ContainerController extends Controller
 
     public function destroy(Container $container)
     {
+        if ($container->status !== 'PENDING') {
+            return redirect()
+                ->route('containers.index')
+                ->with('error', 'No se puede eliminar un contenedor que no está en estado Pendiente.');
+        }
+
+        if ($container->stockMovements()->exists()) {
+            return redirect()
+                ->route('containers.index')
+                ->with('error', 'No se puede eliminar un contenedor con movimientos de inventario registrados.');
+        }
+
+        $hasSerialsInLines = $container->shipmentDocuments()
+            ->whereHas('shipmentDocumentLines', fn($q) => $q->whereNotNull('serial_number'))
+            ->exists();
+
+        if ($hasSerialsInLines) {
+            return redirect()
+                ->route('containers.index')
+                ->with('error', 'No se puede eliminar un contenedor con números de parte o serie registrados.');
+        }
+
         foreach ($container->shipmentDocuments as $document) {
             $document->shipmentDocumentLines()->delete();
             $document->delete();

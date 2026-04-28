@@ -21,20 +21,46 @@ class ReceptionScanController extends Controller
      */
     public function index(Request $request)
     {
-        $search = $request->get('search');
+        $search    = $request->get('search');
+        $dateRange = $request->get('date_range');
+
+        [$dateFrom, $dateTo] = $this->parseDateRange($dateRange);
 
         $documents = ShipmentDocument::with('partner', 'container')
             ->whereIn('document_status', ['PENDING', 'PARTIAL'])
-            ->when(
-                $search,
-                fn($q) => $q
-                    ->where('document_number', 'like', "%{$search}%")
-                    ->orWhereHas('partner', fn($p) => $p->where('name', 'like', "%{$search}%"))
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($inner) use ($search) {
+                    $inner->where('document_number', 'like', "%{$search}%")
+                        ->orWhereHas('container', fn($c) => $c->where('code', 'like', "%{$search}%"))
+                        ->orWhereHas('partner', fn($p) => $p->where('name', 'like', "%{$search}%"));
+                });
+            })
+            ->when($dateFrom && $dateTo, fn($q) =>
+                $q->whereBetween('document_date', [$dateFrom, $dateTo])
             )
             ->orderByDesc('created_at')
-            ->paginate(20);
+            ->paginate(10)
+            ->withQueryString();
 
-        return view('reception-scans.index', compact('documents', 'search'));
+        return view('reception-scans.index', compact('documents', 'search', 'dateRange'));
+    }
+
+    private function parseDateRange(?string $dateRange): array
+    {
+        if (blank($dateRange) || ! str_contains($dateRange, ' - ')) {
+            return [null, null];
+        }
+
+        [$fromStr, $toStr] = explode(' - ', $dateRange, 2);
+
+        try {
+            return [
+                \Carbon\Carbon::parse(trim($fromStr))->format('Y-m-d'),
+                \Carbon\Carbon::parse(trim($toStr))->format('Y-m-d'),
+            ];
+        } catch (\Exception) {
+            return [null, null];
+        }
     }
 
     /**

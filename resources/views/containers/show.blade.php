@@ -1,4 +1,6 @@
 <x-app-layout>
+    <x-toast-notifications />
+
     <div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
 
         {{-- Encabezado --}}
@@ -11,7 +13,7 @@
             <div class="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
                 @if ($container->status === 'PENDING')
                     <a href="{{ route('containers.edit', $container) }}"
-                       class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white">
+                        class="btn bg-blue-900 hover:bg-blue-800 dark:bg-blue-100 dark:hover:bg-white dark:text-blue-800 text-white inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                         {{ __('Editar') }}
                     </a>
                 @endif
@@ -21,18 +23,6 @@
                 </a>
             </div>
         </div>
-
-        {{-- Mensajes de sesión --}}
-        @if (session('success'))
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-6 text-sm">
-                {{ __(session('success')) }}
-            </div>
-        @endif
-        @if (session('error'))
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">
-                {{ __(session('error')) }}
-            </div>
-        @endif
 
         @php
             $statusColors = [
@@ -105,13 +95,13 @@
                         <div class="flex items-center gap-3">
                             <span class="w-44 shrink-0 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">{{ __('Fecha estimada') }}</span>
                             <span class="font-medium text-gray-800 dark:text-gray-100">
-                                {{ $container->estimated_arrival_date ? \Carbon\Carbon::parse($container->estimated_arrival_date)->format('d/m/Y') : '—' }}
+                                {{ $container->estimated_arrival_date ? \Carbon\Carbon::parse($container->estimated_arrival_date)->format('d-m-Y') : '—' }}
                             </span>
                         </div>
                         <div class="flex items-center gap-3">
                             <span class="w-44 shrink-0 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">{{ __('Hora estimada') }}</span>
                             <span class="font-medium text-gray-800 dark:text-gray-100">
-                                {{ $container->estimated_arrival_time ? \Carbon\Carbon::parse($container->estimated_arrival_time)->format('H:i') : '—' }}
+                                {{ $container->estimated_arrival_time ? \Carbon\Carbon::parse($container->estimated_arrival_time)->format('H:i:s') : '—' }}
                             </span>
                         </div>
                     </li>
@@ -133,7 +123,6 @@
             @foreach ($container->shipmentDocuments as $document)
                 <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl border border-gray-200 dark:border-gray-700/60 overflow-hidden">
 
-                    {{-- Header del Documento con Buscador y Contador --}}
                     <header class="px-5 py-4 border-b border-gray-100 dark:border-gray-700/60 bg-gray-50/50 dark:bg-gray-900/20">
                         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
 
@@ -158,9 +147,7 @@
                                 </div>
                             </div>
 
-                            {{-- Centro/Derecha: Buscador y Estado --}}
                             <div class="flex flex-1 items-center justify-end gap-4">
-                                {{-- Buscador Local --}}
                                 <form action="{{ route('containers.show', $container->id) }}" method="GET" class="relative w-full max-w-xs">
                                     <input type="text"
                                            name="search_lines"
@@ -187,9 +174,9 @@
                                 <tr>
                                     <th class="px-5 py-3 text-left w-12">{{ __('#') }}</th>
                                     <th class="px-5 py-3 text-left">{{ __('Serial') }}</th>
-                                    <th class="px-5 py-3 text-left">{{ __('Código de artículo') }}</th>
+                                    <th class="px-5 py-3 text-left">{{ __('Número de Parte') }}</th>
                                     <th class="px-5 py-3 text-left">{{ __('Descripción') }}</th>
-                                    <th class="px-5 py-3 text-right">{{ __('Cant. Recibida') }}</th>
+                                    <th class="px-5 py-3 text-center">{{ __('Cantidad') }}</th>
                                     <th class="px-5 py-3 text-center">{{ __('Estado') }}</th>
                                 </tr>
                             </thead>
@@ -224,7 +211,7 @@
                                         </td>
                                         <td class="px-5 py-3 text-center">
                                             @if ($line->status)
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold uppercase {{ $lineStatusColors[$line->status] ?? 'bg-gray-100 text-gray-600' }}">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold capitalize {{ $lineStatusColors[$line->status] ?? 'bg-gray-100 text-gray-600' }}">
                                                     {{ __(\App\Models\ShipmentDocumentLine::STATUS_OPTIONS[$line->status] ?? $line->status) }}
                                                 </span>
                                             @else

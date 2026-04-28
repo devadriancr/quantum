@@ -41,9 +41,10 @@
                     <span class="hidden lg:block lg:sidebar-expanded:hidden 2xl:hidden text-center w-6" aria-hidden="true">•••</span>
                     <span class="lg:hidden lg:sidebar-expanded:block 2xl:block">Pages</span>
                 </h3>
+                <ul>
                 <!-- Administración -->
-                <li class="pl-4 pr-3 py-2 rounded-lg mb-0.5 last:mb-0 bg-linear-to-r @if(in_array(Request::segment(1), ['item-types', 'item-classes', 'measurement-units', 'warehouses', 'locations', 'partners', 'projects', 'project-prefixes', 'items', 'packing-specifications', 'transaction-types'])){{ 'from-violet-500/[0.12] dark:from-violet-500/[0.24] to-violet-500/[0.04]' }}@endif"
-                    x-data="{ open: {{ in_array(Request::segment(1), ['item-types', 'item-classes', 'measurement-units', 'warehouses', 'locations', 'partners', 'projects', 'project-prefixes', 'items', 'packing-specifications', 'transaction-types']) ? 1 : 0 }} }">
+                <li class="pl-4 pr-3 py-2 rounded-lg mb-0.5 last:mb-0 bg-linear-to-r @if(in_array(Request::segment(1), ['item-types', 'item-classes', 'measurement-units', 'warehouses', 'locations', 'partners', 'projects', 'project-prefixes', 'items', 'packing-specifications', 'transaction-types', 'stock-limits'])){{ 'from-violet-500/[0.12] dark:from-violet-500/[0.24] to-violet-500/[0.04]' }}@endif"
+                    x-data="{ open: {{ in_array(Request::segment(1), ['item-types', 'item-classes', 'measurement-units', 'warehouses', 'locations', 'partners', 'projects', 'project-prefixes', 'items', 'packing-specifications', 'transaction-types', 'stock-limits']) ? 1 : 0 }} }">
 
                     <a class="block text-gray-800 dark:text-gray-100 truncate transition @if(!in_array(Request::segment(1), ['item-types', 'item-classes', 'measurement-units', 'warehouses', 'locations', 'partners', 'projects', 'project-prefixes', 'items'])){{ 'hover:text-gray-900 dark:hover:text-white' }}@endif"
                     href="#0" @click.prevent="open = !open; sidebarExpanded = true">
@@ -66,7 +67,7 @@
                     </a>
 
                     <div class="lg:hidden lg:sidebar-expanded:block 2xl:block">
-                        <ul class="pl-8 mt-1 @if(!in_array(Request::segment(1), ['item-types', 'item-classes', 'measurement-units', 'warehouses', 'locations', 'partners', 'projects', 'project-prefixes', 'items', 'packing-specifications', 'transaction-types'])){{ 'hidden' }}@endif"
+                        <ul class="pl-8 mt-1 @if(!in_array(Request::segment(1), ['item-types', 'item-classes', 'measurement-units', 'warehouses', 'locations', 'partners', 'projects', 'project-prefixes', 'items', 'packing-specifications', 'transaction-types', 'stock-limits'])){{ 'hidden' }}@endif"
                             :class="open ? 'block!' : 'hidden'">
 
                             <!-- Almacenes -->
@@ -214,19 +215,32 @@
                                 </a>
                             </li>
 
+                            <!-- Límites de Stock -->
+                            <li class="mb-1 last:mb-0">
+                                <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'stock-limits'){{ 'text-violet-500!' }}@endif"
+                                href="{{ route('stock-limits.index') }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 shrink-0">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+                                    </svg>
+                                    <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
+                                        {{ __('Límites de Stock') }}
+                                    </span>
+                                </a>
+                            </li>
+
                         </ul>
                     </div>
                 </li>
 
                 <!-- Operaciones -->
-                <li class="pl-4 pr-3 py-2 rounded-lg mb-0.5 last:mb-0 bg-linear-to-r @if(in_array(Request::segment(1), ['containers', 'reception', 'stock-movements'])){{ 'from-violet-500/[0.12] dark:from-violet-500/[0.24] to-violet-500/[0.04]' }}@endif"
-                    x-data="{ open: {{ in_array(Request::segment(1), ['containers', 'reception', 'stock-movements']) ? 1 : 0 }} }">
+                <li class="pl-4 pr-3 py-2 rounded-lg mb-0.5 last:mb-0 bg-linear-to-r @if(in_array(Request::segment(1), ['containers', 'reception', 'stock-movements', 'inventory-balances', 'material-outputs'])){{ 'from-violet-500/[0.12] dark:from-violet-500/[0.24] to-violet-500/[0.04]' }}@endif"
+                    x-data="{ open: {{ in_array(Request::segment(1), ['containers', 'reception', 'stock-movements', 'inventory-balances', 'material-outputs']) ? 1 : 0 }} }">
 
-                    <a class="block text-gray-800 dark:text-gray-100 truncate transition @if(!in_array(Request::segment(1), ['containers', 'reception', 'stock-movements'])){{ 'hover:text-gray-900 dark:hover:text-white' }}@endif"
+                    <a class="block text-gray-800 dark:text-gray-100 truncate transition @if(!in_array(Request::segment(1), ['containers', 'reception', 'stock-movements', 'inventory-balances', 'material-outputs'])){{ 'hover:text-gray-900 dark:hover:text-white' }}@endif"
                     href="#0" @click.prevent="open = !open; sidebarExpanded = true">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5 @if(in_array(Request::segment(1), ['containers', 'reception', 'stock-movements'])){{ 'text-violet-500' }}@else{{ 'text-gray-400 dark:text-gray-500' }}@endif">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5 @if(in_array(Request::segment(1), ['containers', 'reception', 'stock-movements', 'inventory-balances'])){{ 'text-violet-500' }}@else{{ 'text-gray-400 dark:text-gray-500' }}@endif">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
                                 </svg>
                                 <span class="text-sm font-medium ml-4 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
@@ -234,7 +248,7 @@
                                 </span>
                             </div>
                             <div class="flex shrink-0 ml-2 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                <svg class="w-3 h-3 shrink-0 ml-1 fill-current text-gray-400 dark:text-gray-500 @if(in_array(Request::segment(1), ['containers', 'reception', 'stock-movements'])){{ 'rotate-180' }}@endif"
+                                <svg class="w-3 h-3 shrink-0 ml-1 fill-current text-gray-400 dark:text-gray-500 @if(in_array(Request::segment(1), ['containers', 'reception', 'stock-movements', 'inventory-balances', 'material-outputs'])){{ 'rotate-180' }}@endif"
                                     :class="open ? 'rotate-180' : 'rotate-0'" viewBox="0 0 12 12">
                                     <path d="M5.9 11.4L.5 6l1.4-1.4 4 4 4-4L11.3 6z" />
                                 </svg>
@@ -243,7 +257,7 @@
                     </a>
 
                     <div class="lg:hidden lg:sidebar-expanded:block 2xl:block">
-                        <ul class="pl-8 mt-1 @if(!in_array(Request::segment(1), ['containers', 'reception', 'stock-movements'])){{ 'hidden' }}@endif"
+                        <ul class="pl-8 mt-1 @if(!in_array(Request::segment(1), ['containers', 'reception', 'stock-movements', 'inventory-balances', 'material-outputs'])){{ 'hidden' }}@endif"
                             :class="open ? 'block!' : 'hidden'">
 
                             <!-- Contenedores -->
@@ -251,7 +265,7 @@
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'containers'){{ 'text-violet-500!' }}@endif"
                                 href="{{ route('containers.index') }}">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 shrink-0">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
                                     </svg>
                                     <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
                                         {{ __('Contenedores') }}
@@ -272,7 +286,7 @@
                                 </a>
                             </li>
 
-                            <!-- Movimientos de Inventario -->
+                            <!-- Histórico de Movimientos -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'stock-movements'){{ 'text-violet-500!' }}@endif"
                                 href="{{ route('stock-movements.index') }}">
@@ -280,7 +294,33 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
                                     </svg>
                                     <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                        {{ __('Movimientos de Inventario') }}
+                                        {{ __('Histórico de Movimientos') }}
+                                    </span>
+                                </a>
+                            </li>
+
+                            <!-- Inventario -->
+                            <li class="mb-1 last:mb-0">
+                                <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'inventory-balances'){{ 'text-violet-500!' }}@endif"
+                                href="{{ route('inventory-balances.index') }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 shrink-0">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+                                    </svg>
+                                    <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
+                                        {{ __('Inventario') }}
+                                    </span>
+                                </a>
+                            </li>
+
+                            <!-- Salida a Línea de Producción -->
+                            <li class="mb-1 last:mb-0">
+                                <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'material-outputs'){{ 'text-violet-500!' }}@endif"
+                                href="{{ route('material-outputs.index') }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 shrink-0">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                                    </svg>
+                                    <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
+                                        {{ __('Salida a Producción') }}
                                     </span>
                                 </a>
                             </li>
@@ -288,6 +328,7 @@
                         </ul>
                     </div>
                 </li>
+                </ul>
 
                 {{--  INICIO BLOQUE ELIMINADO
                 <ul>

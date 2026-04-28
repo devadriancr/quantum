@@ -21,6 +21,9 @@ use App\Http\Controllers\ContainerController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectPrefixController;
 use App\Http\Controllers\ReceptionScanController;
+use App\Http\Controllers\InventoryBalanceController;
+use App\Http\Controllers\MaterialOutputController;
+use App\Http\Controllers\StockLimitController;
 use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\TransactionTypeController;
 use App\Http\Controllers\WarehouseController;
@@ -67,6 +70,19 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/reception/{shipmentDocument}/complete', [ReceptionScanController::class, 'complete'])->name('reception.complete');
 
     Route::resource('stock-movements', StockMovementController::class)->only(['index', 'show']);
+
+    Route::get('/inventory-balances', [InventoryBalanceController::class, 'index'])->name('inventory-balances.index');
+    Route::get('/inventory-balances/{inventoryBalance}', [InventoryBalanceController::class, 'show'])->name('inventory-balances.show');
+
+    Route::get('/material-outputs', [MaterialOutputController::class, 'index'])->name('material-outputs.index');
+    Route::post('/material-outputs', [MaterialOutputController::class, 'store'])->name('material-outputs.store');
+    Route::get('/material-outputs/{movement}', [MaterialOutputController::class, 'show'])->name('material-outputs.show');
+    Route::post('/material-outputs/{movement}/scan', [MaterialOutputController::class, 'scan'])->name('material-outputs.scan');
+    Route::post('/material-outputs/{movement}/complete', [MaterialOutputController::class, 'complete'])->name('material-outputs.complete');
+    Route::delete('/material-outputs/{movement}/lines/{line}', [MaterialOutputController::class, 'removeLine'])->name('material-outputs.remove-line');
+    Route::delete('/material-outputs/{movement}', [MaterialOutputController::class, 'destroy'])->name('material-outputs.destroy');
+
+    Route::resource('stock-limits', StockLimitController::class)->except(['show']);
 
     Route::get('/ecommerce/customers', [CustomerController::class, 'index'])->name('customers');
     Route::get('/ecommerce/orders', [OrderController::class, 'index'])->name('orders');

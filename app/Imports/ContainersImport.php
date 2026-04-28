@@ -13,9 +13,9 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
 class ContainersImport implements ToCollection, WithHeadingRow
 {
-    public array $errors   = [];
-    public int   $created  = 0;
-    public int   $skipped  = 0;
+    public array $errors  = [];
+    public int   $created = 0;
+    public int   $skipped = 0;
 
     /**
      * @param Collection $rows
@@ -37,25 +37,35 @@ class ContainersImport implements ToCollection, WithHeadingRow
             $deliveryDate = $this->parseDate($firstLine['delivery_date'] ?? null);
             $deliveryTime = $this->parseTime($firstLine['delivery_time'] ?? null);
 
-            // --- Crear o recuperar el contenedor ---
-            $container = Container::firstOrCreate(
-                ['code' => $ctNo],
-                [
+            $container = Container::where('code', $ctNo)
+                ->where(function ($q) use ($deliveryDate) {
+                    $deliveryDate
+                        ? $q->where('estimated_arrival_date', $deliveryDate)
+                        : $q->whereNull('estimated_arrival_date');
+                })
+                ->where(function ($q) use ($deliveryTime) {
+                    $deliveryTime
+                        ? $q->where('estimated_arrival_time', $deliveryTime)
+                        : $q->whereNull('estimated_arrival_time');
+                })
+                ->first();
+
+            if (! $container) {
+                $container = Container::create([
+                    'code'                   => $ctNo,
                     'partner_id'             => null,
                     'container_type'         => 'CONTAINER',
                     'estimated_arrival_date' => $deliveryDate,
                     'estimated_arrival_time' => $deliveryTime,
                     'status'                 => 'PENDING',
-                ]
-            );
+                ]);
+            }
 
-            // --- Crear el documento si no existe ---
-            $docNumber = 'DOC-' . $ctNo;
-
+            // --- Buscar o crear el documento del contenedor ---
             $document = ShipmentDocument::firstOrCreate(
-                ['document_number' => $docNumber, 'container_id' => $container->id],
+                ['container_id' => $container->id],
                 [
-                    'container_id'           => $container->id,
+                    'document_number'        => $ctNo,
                     'partner_id'             => null,
                     'document_date'          => $deliveryDate,
                     'document_time'          => $deliveryTime,
@@ -68,13 +78,27 @@ class ContainersImport implements ToCollection, WithHeadingRow
             // --- Crear las líneas ---
             $lineNumber = $document->shipmentDocumentLines()->max('line_number') ?? 0;
 
+            // Pre-cargar seriales existentes en este documento para detectar duplicados eficientemente
+            $existingSerials = $document->shipmentDocumentLines()
+                ->whereNotNull('serial_number')
+                ->pluck('serial_number')
+                ->flip()
+                ->all();
+
             foreach ($lines as $row) {
-                $partNo  = trim($row['parts_no']  ?? '');
+                $partNo   = trim($row['parts_no']  ?? '');
                 $partsQty = $row['parts_qty']  ?? 0;
                 $moduleNo = trim($row['module_no'] ?? '');
 
                 if (blank($partNo)) {
                     $this->errors[] = "CT NO. {$ctNo}: fila sin PARTS NO., se omitió.";
+                    $this->skipped++;
+                    continue;
+                }
+
+                // Verificar serial duplicado dentro del mismo documento
+                if ($moduleNo !== '' && isset($existingSerials[$moduleNo])) {
+                    $this->errors[] = "CT NO. {$ctNo}: serial '{$moduleNo}' duplicado en este contenedor, línea omitida.";
                     $this->skipped++;
                     continue;
                 }
@@ -99,18 +123,22 @@ class ContainersImport implements ToCollection, WithHeadingRow
                     'status'               => 'PENDING',
                 ]);
 
+                // Registrar serial recién creado para evitar duplicados en la misma importación
+                if ($moduleNo !== '') {
+                    $existingSerials[$moduleNo] = true;
+                }
+
                 $this->created++;
             }
         }
     }
 
-    private function parseDate($value): ?string
+    private function parseDate(mixed $value): ?string
     {
         if (blank($value)) {
             return null;
         }
 
-        // Excel puede pasar fechas como número serial o como string
         if (is_numeric($value)) {
             return Carbon::createFromTimestamp(
                 \PhpOffice\PhpSpreadsheet\Shared\Date::excelToTimestamp($value)
@@ -119,18 +147,17 @@ class ContainersImport implements ToCollection, WithHeadingRow
 
         try {
             return Carbon::parse($value)->format('Y-m-d');
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return null;
         }
     }
 
-    private function parseTime($value): ?string
+    private function parseTime(mixed $value): ?string
     {
         if (blank($value)) {
             return null;
         }
 
-        // Excel puede pasar tiempos como fracción decimal (ej. 0.5 = 12:00)
         if (is_numeric($value) && $value < 1) {
             $seconds = (int) round($value * 86400);
             $h = intdiv($seconds, 3600);
@@ -141,7 +168,7 @@ class ContainersImport implements ToCollection, WithHeadingRow
 
         try {
             return Carbon::parse($value)->format('H:i:s');
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return null;
         }
     }

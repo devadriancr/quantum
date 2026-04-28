@@ -57,6 +57,19 @@ class Container extends Model
         return $this->hasMany(StockMovement::class);
     }
 
+    public function canBeDeleted(): bool
+    {
+        if ($this->status !== 'PENDING') {
+            return false;
+        }
+        if ($this->stockMovements()->exists()) {
+            return false;
+        }
+        return !$this->shipmentDocuments()
+            ->whereHas('shipmentDocumentLines', fn($q) => $q->whereNotNull('serial_number'))
+            ->exists();
+    }
+
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by_user_id');
