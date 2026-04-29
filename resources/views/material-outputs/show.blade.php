@@ -17,13 +17,6 @@
                         </svg>
                         Finalizar Escaneo
                     </button>
-                @else
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd"/>
-                        </svg>
-                        Entrega Finalizada
-                    </span>
                 @endif
                 <a href="{{ route('material-outputs.index') }}"
                    class="btn bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-600 dark:text-gray-300">
@@ -113,6 +106,30 @@
             });
         }
 
+        function swalBase(extra = {}) {
+            const isDark = document.documentElement.classList.contains('dark');
+            return {
+                buttonsStyling: false,
+                customClass: {
+                    confirmButton: 'inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg mx-2 transition-colors',
+                    cancelButton:  'inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg mx-2 transition-colors',
+                },
+                background: isDark ? '#111827' : '#ffffff',
+                color:      isDark ? '#f3f4f6' : '#1f2937',
+                ...extra,
+            };
+        }
+
+        function swalConfirm(extra = {}) {
+            return swalBase({
+                ...extra,
+                customClass: {
+                    confirmButton: 'inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg mx-2 transition-colors',
+                    cancelButton:  'inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg mx-2 transition-colors',
+                },
+            });
+        }
+
         // ── Eliminar línea (retorno al almacén) ────────────────────────
         document.addEventListener('click', async (e) => {
             const btn = e.target.closest('.remove-line-btn');
@@ -120,18 +137,16 @@
 
             const lineId = btn.dataset.lineId;
 
-            const result = await Swal.fire({
-                title: '¿Retornar al almacén?',
-                text:  'El material volverá al almacén de recibo (L60) y se registrará como devolución.',
-                icon:  'warning',
-                showCancelButton:    true,
-                confirmButtonColor:  '#dc2626',
-                cancelButtonColor:   '#6b7280',
-                confirmButtonText:   'Sí, retornar',
-                cancelButtonText:    'Cancelar',
-                background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-                color:      document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#1f2937',
-            });
+            const result = await Swal.fire(swalBase({
+                title:             '¿Eliminar pieza?',
+                text:              'El material regresará al almacén (L60).',
+                icon:              'warning',
+                iconColor:         '#ef4444',
+                showCancelButton:  true,
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText:  'Cancelar',
+                reverseButtons:    true,
+            }));
 
             if (!result.isConfirmed) return;
 
@@ -145,20 +160,19 @@
 
                 if (data.status === 'success') {
                     Livewire.dispatch('line-removed');
-                    Swal.fire({
-                        title: 'Retornado',
-                        text:  data.message,
-                        icon:  'success',
-                        timer: 1500,
+                    Swal.fire(swalBase({
+                        title:             'Material retornado',
+                        text:              'La pieza volvió al almacén de recibo.',
+                        icon:              'success',
+                        iconColor:         '#16a34a',
+                        timer:             1500,
                         showConfirmButton: false,
-                        background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-                        color:      document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#1f2937',
-                    });
+                    }));
                 } else {
-                    Swal.fire({ title: 'Error', text: data.message, icon: 'error' });
+                    Swal.fire(swalBase({ title: 'Error', text: data.message, icon: 'error', iconColor: '#ef4444' }));
                 }
             } catch {
-                Swal.fire({ title: 'Error', text: 'Error de conexión.', icon: 'error' });
+                Swal.fire(swalBase({ title: 'Error', text: 'Error de conexión.', icon: 'error', iconColor: '#ef4444' }));
             }
         });
 
@@ -166,18 +180,15 @@
         const btnComplete = document.getElementById('btn-complete');
         if (btnComplete) {
             btnComplete.addEventListener('click', async () => {
-                const result = await Swal.fire({
-                    title: '¿Finalizar entrega?',
-                    text:  'No podrás agregar ni quitar más piezas después de finalizar.',
-                    icon:  'question',
-                    showCancelButton:   true,
-                    confirmButtonColor: '#16a34a',
-                    cancelButtonColor:  '#6b7280',
-                    confirmButtonText:  'Sí, finalizar',
-                    cancelButtonText:   'Cancelar',
-                    background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-                    color:      document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#1f2937',
-                });
+                const result = await Swal.fire(swalConfirm({
+                    title:             '¿Finalizar entrega?',
+                    text:              'Ya no podrás agregar ni quitar piezas.',
+                    icon:              'question',
+                    showCancelButton:  true,
+                    confirmButtonText: 'Sí, finalizar',
+                    cancelButtonText:  'Cancelar',
+                    reverseButtons:    true,
+                }));
 
                 if (!result.isConfirmed) return;
 
@@ -192,18 +203,17 @@
                     if (data.status === 'completed') {
                         Livewire.dispatch('movement-completed');
                         btnComplete.remove();
-                        await Swal.fire({
-                            title: '¡Entrega finalizada!',
-                            icon:  'success',
-                            timer: 1500,
+                        await Swal.fire(swalBase({
+                            title:             '¡Entrega finalizada!',
+                            icon:              'success',
+                            iconColor:         '#16a34a',
+                            timer:             1500,
                             showConfirmButton: false,
-                            background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-                            color:      document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#1f2937',
-                        });
+                        }));
                         window.location.href = "{{ route('material-outputs.index') }}";
                     }
                 } catch {
-                    Swal.fire({ title: 'Error', text: 'No se pudo finalizar.', icon: 'error' });
+                    Swal.fire(swalBase({ title: 'Error', text: 'No se pudo finalizar.', icon: 'error', iconColor: '#ef4444' }));
                 }
             });
         }

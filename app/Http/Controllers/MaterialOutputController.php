@@ -17,7 +17,10 @@ class MaterialOutputController extends Controller
 
     public function index(Request $request)
     {
-        $search = $request->get('search');
+        $search    = $request->get('search');
+        $dateRange = $request->get('date_range');
+
+        [$dateFrom, $dateTo] = $this->parseDateRange($dateRange);
 
         $movements = StockMovement::with(['lines', 'locationFrom', 'locationTo', 'createdBy'])
             ->where('movement_type', 'OUTBOUND')
@@ -32,12 +35,31 @@ class MaterialOutputController extends Controller
                       ->orWhere('description', 'like', "%{$search}%")
                   );
             })
+            ->when($dateFrom && $dateTo, fn($q) => $q->whereBetween('movement_date', [$dateFrom, $dateTo]))
             ->orderByDesc('movement_date')
             ->orderByDesc('movement_time')
             ->paginate(10)
             ->withQueryString();
 
-        return view('material-outputs.index', compact('movements', 'search'));
+        return view('material-outputs.index', compact('movements', 'search', 'dateRange'));
+    }
+
+    private function parseDateRange(?string $dateRange): array
+    {
+        if (blank($dateRange) || ! str_contains($dateRange, ' - ')) {
+            return [null, null];
+        }
+
+        [$fromStr, $toStr] = explode(' - ', $dateRange, 2);
+
+        try {
+            return [
+                \Carbon\Carbon::parse(trim($fromStr))->format('Y-m-d'),
+                \Carbon\Carbon::parse(trim($toStr))->format('Y-m-d'),
+            ];
+        } catch (\Exception) {
+            return [null, null];
+        }
     }
 
     // ── Crear nuevo movimiento y redirigir al escaneo ────────────────────
