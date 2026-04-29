@@ -3,60 +3,99 @@
 
     <div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
 
-        <div class="sm:flex sm:justify-between sm:items-center mb-8">
+        <div class="sm:flex sm:justify-between sm:items-start mb-8 gap-4">
             <div class="mb-4 sm:mb-0">
                 <h1 class="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">
                     {{ __('Contenedores') }}
                 </h1>
             </div>
 
-            <div class="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
-                <form action="{{ route('containers.index') }}" method="GET" class="relative flex items-center">
-                    <label for="action-search" class="sr-only">Buscar</label>
-                    <input
-                        id="action-search"
-                        name="search"
-                        class="form-input pl-9 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-blue-300 rounded-lg"
-                        type="search"
-                        placeholder="{{ __('Buscar por código o estado...') }}"
-                        value="{{ request('search') }}"
-                    />
-                    <button class="absolute inset-0 right-auto group" type="submit" aria-label="Buscar">
-                        <svg class="shrink-0 fill-current text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400 ml-3 mr-2" width="16" height="16" viewBox="0 0 16 16">
-                            <path d="M7 14c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7zM7 2C4.243 2 2 4.243 2 7s2.243 5 5 5 5-2.243 5-5-2.243-5-5-5z" />
-                            <path d="M15.707 14.293L13.314 11.9a8.019 8.019 0 01-1.414 1.414l2.393 2.393a.997.997 0 001.414 0 .999.999 0 000-1.414z" />
-                        </svg>
+            <div class="flex flex-col sm:flex-row gap-2 items-start sm:items-center flex-wrap">
+
+                {{-- Filtros --}}
+                <form action="{{ route('containers.index') }}" method="GET"
+                      class="flex flex-col sm:flex-row gap-2 items-start sm:items-center flex-wrap">
+
+                    {{-- Búsqueda texto --}}
+                    <div class="relative flex items-center">
+                        <label for="action-search" class="sr-only">Buscar</label>
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <svg class="shrink-0 fill-current text-gray-400 dark:text-gray-500" width="16" height="16" viewBox="0 0 16 16">
+                                <path d="M7 14c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7zM7 2C4.243 2 2 4.243 2 7s2.243 5 5 5 5-2.243 5-5-2.243-5-5-5z"/>
+                                <path d="M15.707 14.293L13.314 11.9a8.019 8.019 0 01-1.414 1.414l2.393 2.393a.997.997 0 001.414 0 .999.999 0 000-1.414z"/>
+                            </svg>
+                        </div>
+                        <input
+                            id="action-search"
+                            name="search"
+                            value="{{ $search ?? '' }}"
+                            class="form-input pl-9 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-blue-300 rounded-lg"
+                            type="search"
+                            placeholder="{{ __('Buscar por código o estado...') }}"
+                        />
+                    </div>
+
+                    {{-- Datepicker rango de fechas --}}
+                    <div class="relative flex items-center">
+                        <input
+                            name="date_range"
+                            class="datepicker form-input pl-10 dark:bg-gray-800 text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100 font-medium w-[15.5rem]"
+                            placeholder="{{ __('Rango de fechas') }}"
+                            data-class="flatpickr-right"
+                            data-no-default
+                            data-selected="{{ $dateRange ?? '' }}"
+                        />
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="1.5"
+                                stroke="currentColor"
+                                class="shrink-0 text-gray-400 dark:text-gray-500"
+                                width="18"
+                                height="18">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    {{-- Botón Buscar --}}
+                    <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-800 hover:bg-gray-900 dark:bg-gray-100 dark:hover:bg-white text-white dark:text-gray-800 text-sm font-medium rounded-lg transition-colors shadow-sm">
+                        {{ __('Buscar') }}
                     </button>
-                    @if(request('search'))
-                        <a href="{{ route('containers.index') }}" class="ml-2 text-sm text-gray-500 hover:text-blue-500 underline whitespace-nowrap">
+
+                    @if($search || $dateRange)
+                        <a href="{{ route('containers.index') }}"
+                           class="text-sm text-gray-500 hover:text-blue-500 underline whitespace-nowrap ml-2">
                             {{ __('Limpiar') }}
                         </a>
                     @endif
                 </form>
+            </div>
+        </div>
 
+        {{-- Tabla --}}
+        <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl border border-gray-200 dark:border-gray-700/60">
+
+            {{-- Header de la tarjeta con botones --}}
+            <div class="flex items-center justify-end gap-2 px-5 py-4 border-b border-gray-100 dark:border-gray-700/60">
                 <a href="{{ route('containers.create') }}"
-                   {{-- class="btn bg-blue-600 hover:bg-blue-700 text-white inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"> --}}
-                   class="btn bg-blue-900 hover:bg-blue-800 dark:bg-blue-100 dark:hover:bg-white dark:text-blue-800 text-white inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                   class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-800 hover:bg-blue-900 dark:bg-blue-100 dark:hover:bg-white dark:text-blue-800 text-white text-sm font-medium rounded-lg transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                     </svg>
                     {{ __('Nuevo Contenedor') }}
                 </a>
-
-                {{-- Botón Importar Excel --}}
                 <button
                     onclick="document.getElementById('modal-import').classList.remove('hidden')"
-                    class="btn bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-white dark:text-gray-800 text-white inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    class="inline-flex items-center gap-1.5 px-4 py-2 bg-green-800 hover:bg-green-900 dark:bg-green-100 dark:hover:bg-white dark:text-green-800 text-white text-sm font-medium rounded-lg transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                     </svg>
                     {{ __('Importar Excel') }}
                 </button>
             </div>
-        </div>
 
-        {{-- Tabla --}}
-        <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl border border-gray-200 dark:border-gray-700/60">
             <div class="overflow-x-auto">
                 <table class="table-auto w-full dark:text-gray-300">
                     <thead class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-t border-b border-gray-100 dark:border-gray-700/60">
@@ -276,24 +315,42 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         function confirmDelete(id, code) {
+            const isDark = document.documentElement.classList.contains('dark');
+
             Swal.fire({
-                title: '¿Estás seguro?',
-                text: 'Se eliminará el contenedor ' + code + ' y todos sus documentos y líneas asociadas. Esta acción no se puede revertir.',
+                title: `<span class="text-lg font-bold">${'{{ __("¿Eliminar contenedor?") }}'}</span>`,
+                html: `
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                        ${'{{ __("Estás a punto de borrar el contenedor") }}'}
+                        <strong class="text-gray-800 dark:text-gray-100">${code}</strong>.<br>
+                        ${'{{ __("Esta acción es irreversible.") }}'}
+                    </div>
+                `,
                 icon: 'warning',
+                iconColor: '#ef4444', // Rojo de Tailwind (red-500)
                 showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Sí, eliminar',
-                cancelButtonText: 'Cancelar',
-                background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-                color: document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#1f2937',
-            }).then(function (result) {
+                confirmButtonText: '{{ __("Sí, eliminar") }}',
+                cancelButtonText: '{{ __("Cancelar") }}',
+                reverseButtons: true,
+
+                // Estilos personalizados con clases de Tailwind
+                buttonsStyling: false,
+                customClass: {
+                    confirmButton: 'inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg mx-2 transition-colors',
+                    cancelButton: 'inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg mx-2 transition-colors'
+                },
+
+                // Fondo y textos según el tema
+                background: isDark ? '#111827' : '#ffffff', // gray-900 o blanco
+                color: isDark ? '#f3f4f6' : '#1f2937',
+            }).then((result) => {
                 if (result.isConfirmed) {
                     document.getElementById('form-delete-' + id).submit();
                 }
             });
         }
 
+        // El resto de tu script (cierre de modal) se queda igual
         document.getElementById('modal-import').addEventListener('click', function (e) {
             if (e.target === this) {
                 this.classList.add('hidden');

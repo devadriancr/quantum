@@ -74,24 +74,6 @@
             </form>
         </div>
 
-        {{-- Filtro de fecha activo --}}
-        @if($dateRange)
-            <div class="flex items-center gap-2 mb-4">
-                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-3.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
-                    </svg>
-                    {{ $dateRange }}
-                    <a href="{{ route('reception.index', array_filter(['search' => $search])) }}"
-                       class="ml-1 hover:text-blue-900 dark:hover:text-blue-100">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-3">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
-                        </svg>
-                    </a>
-                </span>
-            </div>
-        @endif
-
         {{-- Tabla --}}
         <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl border border-gray-200 dark:border-gray-700/60">
             <div class="overflow-x-auto">
@@ -119,8 +101,11 @@
                         @forelse($documents as $doc)
                             @php
                                 $statusColors = [
-                                    'PENDING' => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400',
-                                    'PARTIAL' => 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
+                                    'PENDING'     => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400',
+                                    'PARTIAL'     => 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
+                                    'COMPLETE'    => 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400',
+                                    'RECEIVED'    => 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400',
+                                    'DISCREPANCY' => 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400',
                                 ];
                                 $statusLabels = \App\Models\ShipmentDocument::STATUS_OPTIONS;
                             @endphp
@@ -133,14 +118,14 @@
                                 <td class="px-5 py-3 whitespace-nowrap">
                                     <span class="text-gray-600 dark:text-gray-400">
                                         {{ $doc->document_date
-                                            ? \Carbon\Carbon::parse($doc->document_date)->format('d/m/Y')
+                                            ? \Carbon\Carbon::parse($doc->document_date)->format('d-m-Y')
                                             : '—' }}
                                     </span>
                                 </td>
                                 <td class="px-5 py-3 whitespace-nowrap">
                                     <span class="text-gray-600 dark:text-gray-400">
                                         {{ $doc->document_time
-                                            ? \Carbon\Carbon::parse($doc->document_time)->format('H:i')
+                                            ? \Carbon\Carbon::parse($doc->document_time)->format('H:i:s')
                                             : '—' }}
                                     </span>
                                 </td>
@@ -150,17 +135,18 @@
                                     </span>
                                 </td>
                                 <td class="px-5 py-3 whitespace-nowrap text-right">
-
-                                    {{-- Botón Escanear Modificado --}}
-                                    <a href="{{ route('reception.show', $doc) }}"
-                                        class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border bg-gray-800 hover:bg-gray-900 dark:bg-gray-100 dark:hover:bg-white text-white dark:text-gray-800 text-sm font-medium rounded-lg transition-colors shadow-sm">
+                                    <a href="{{ $doc->document_status === 'COMPLETE' ? '#' : route('reception.show', $doc) }}"
+                                        @if($doc->document_status === 'COMPLETE') aria-disabled="true" @endif
+                                        class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border text-sm font-medium rounded-lg shadow-sm
+                                            {{ $doc->document_status === 'COMPLETE'
+                                                ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-600 cursor-not-allowed pointer-events-none'
+                                                : 'bg-gray-800 hover:bg-gray-900 dark:bg-gray-100 dark:hover:bg-white text-white dark:text-gray-800 border-transparent transition-colors' }}">
                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" />
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 19.5h.75v.75h-.75v-.75ZM19.5 13.5h.75v.75h-.75v-.75ZM19.5 19.5h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z" />
                                         </svg>
                                         {{ __('Escanear') }}
                                     </a>
-
                                 </td>
                             </tr>
                         @empty

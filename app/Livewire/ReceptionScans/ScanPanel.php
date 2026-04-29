@@ -8,13 +8,15 @@ use Livewire\Attributes\On;
 class ScanPanel extends Component
 {
     public int   $movementId;
+    public bool  $isCompleted = false;
     public int   $total = 0;
     public array $scans = [];
 
-    public function mount(int $movementId, $initialScans): void
+    public function mount(int $movementId, $initialScans, bool $isCompleted = false): void
     {
-        $this->movementId = $movementId;
-        $this->total      = $initialScans->count();
+        $this->movementId  = $movementId;
+        $this->isCompleted = $isCompleted;
+        $this->total       = $initialScans->count();
         $this->scans      = $initialScans->map(fn($s) => [
             'consignment_type' => $s->consignment_type,
             'item_code'        => $s->parsed_item_code,

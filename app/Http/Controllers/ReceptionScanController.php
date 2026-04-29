@@ -27,7 +27,7 @@ class ReceptionScanController extends Controller
         [$dateFrom, $dateTo] = $this->parseDateRange($dateRange);
 
         $documents = ShipmentDocument::with('partner', 'container')
-            ->whereIn('document_status', ['PENDING', 'PARTIAL'])
+            // ->whereIn('document_status', ['PENDING', 'PARTIAL'])
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($inner) use ($search) {
                     $inner->where('document_number', 'like', "%{$search}%")
@@ -312,15 +312,9 @@ class ReceptionScanController extends Controller
         DB::transaction(function () use ($movement, $shipmentDocument) {
             $movement->update(['status' => 'COMPLETED']);
 
-            $lines        = $shipmentDocument->shipmentDocumentLines()->get();
-            $allReceived  = $lines->every(fn($l) => $l->status === 'RECEIVED');
-            $someReceived = $lines->contains(fn($l) => $l->status === 'RECEIVED');
+            $shipmentDocument->update(['document_status' => 'COMPLETE']);
 
-            $documentStatus = $allReceived ? 'COMPLETE' : ($someReceived ? 'PARTIAL' : 'DISCREPANCY');
-
-            $shipmentDocument->update(['document_status' => $documentStatus]);
-
-            if ($allReceived && $shipmentDocument->container_id) {
+            if ($shipmentDocument->container_id) {
                 $shipmentDocument->container->update(['status' => 'RECEIVED']);
             }
         });

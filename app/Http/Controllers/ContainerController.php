@@ -15,26 +15,45 @@ class ContainerController extends Controller
 {
     public function index(Request $request)
     {
-        $search = $request->input('search');
+        $search    = $request->input('search');
+        $dateRange = $request->input('date_range');
+
+        [$dateFrom, $dateTo] = $this->parseDateRange($dateRange);
 
         $containers = Container::with('partner')
             ->withCount('stockMovements')
-            // ->withExists([
-            //     'shipmentDocuments as has_registered_serials' => fn($q) => $q->whereHas(
-            //         'shipmentDocumentLines', fn($sub) => $sub->whereNotNull('serial_number')
-            //     ),
-            // ])
             ->when($search, function ($query, $search) {
                 $query->where('code', 'like', "%{$search}%")
                     ->orWhere('status', 'like', "%{$search}%");
             })
+            ->when(
+                $dateFrom && $dateTo,
+                fn($q) =>
+                $q->whereBetween('estimated_arrival_date', [$dateFrom, $dateTo])
+            )
             ->latest()
             ->paginate(10)
             ->withQueryString();
 
-        // dd($containers[0]->has_registered_serials);
+        return view('containers.index', compact('containers', 'search', 'dateRange'));
+    }
 
-        return view('containers.index', compact('containers'));
+    private function parseDateRange(?string $dateRange): array
+    {
+        if (blank($dateRange) || ! str_contains($dateRange, ' - ')) {
+            return [null, null];
+        }
+
+        [$fromStr, $toStr] = explode(' - ', $dateRange, 2);
+
+        try {
+            return [
+                \Carbon\Carbon::parse(trim($fromStr))->format('Y-m-d'),
+                \Carbon\Carbon::parse(trim($toStr))->format('Y-m-d'),
+            ];
+        } catch (\Exception) {
+            return [null, null];
+        }
     }
 
     public function create()
@@ -136,12 +155,16 @@ class ContainerController extends Controller
             'shipmentDocuments' => function ($query) use ($search) {
                 $query->with(['shipmentDocumentLines' => function ($lineQuery) use ($search) {
                     $lineQuery->when($search, function ($q) use ($search) {
-                        $q->where('serial_number', 'like', "%{$search}%")
-                            ->orWhereHas('item', function ($itemQ) use ($search) {
-                                $itemQ->where('code', 'like', "%{$search}%")
-                                    ->orWhere('description', 'like', "%{$search}%");
-                            });
-                    })->with('item');
+                        $q->where(function ($subQ) use ($search) {
+                            $subQ->where('serial_number', 'like', "%{$search}%")
+                                ->orWhereHas('item', function ($itemQ) use ($search) {
+                                    $itemQ->where('code', 'like', "%{$search}%")
+                                        ->orWhere('description', 'like', "%{$search}%");
+                                });
+                        });
+                    })
+                        ->orderBy('line_number', 'asc')
+                        ->with('item');
                 }])->withCount('shipmentDocumentLines');
             }
         ])->findOrFail($id);
@@ -208,15 +231,15 @@ class ContainerController extends Controller
                 ->with('error', 'No se puede eliminar un contenedor con movimientos de inventario registrados.');
         }
 
-        $hasSerialsInLines = $container->shipmentDocuments()
-            ->whereHas('shipmentDocumentLines', fn($q) => $q->whereNotNull('serial_number'))
-            ->exists();
+        // $hasSerialsInLines = $container->shipmentDocuments()
+        //     ->whereHas('shipmentDocumentLines', fn($q) => $q->whereNotNull('serial_number'))
+        //     ->exists();
 
-        if ($hasSerialsInLines) {
-            return redirect()
-                ->route('containers.index')
-                ->with('error', 'No se puede eliminar un contenedor con números de parte o serie registrados.');
-        }
+        // if ($hasSerialsInLines) {
+        //     return redirect()
+        //         ->route('containers.index')
+        //         ->with('error', 'No se puede eliminar un contenedor con números de parte o serie registrados.');
+        // }
 
         foreach ($container->shipmentDocuments as $document) {
             $document->shipmentDocumentLines()->delete();

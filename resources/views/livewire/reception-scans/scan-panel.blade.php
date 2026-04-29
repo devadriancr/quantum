@@ -1,6 +1,7 @@
 <div class="space-y-4">
 
-    {{-- Input de escaneo --}}
+    {{-- Input de escaneo (solo cuando no está completado) --}}
+    @if(!$isCompleted)
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700/60 p-5">
         <label class="block text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">
             Escanear Etiqueta
@@ -24,6 +25,7 @@
         {{-- Notificación de resultado --}}
         <div id="scan-result" class="hidden mt-3"></div>
     </div>
+    @endif
 
     {{-- Historial de escaneos --}}
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700/60 overflow-hidden">

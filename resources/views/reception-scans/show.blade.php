@@ -8,14 +8,23 @@
                     Recepción de Material
                 </h1>
             </div>
-            <div class="flex gap-2 mt-4 sm:mt-0">
-                <button id="btn-complete"
-                    class="btn bg-green-600 hover:bg-green-700 text-white inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd"/>
-                    </svg>
-                    Completar Recepción
-                </button>
+            <div class="flex gap-2 mt-4 sm:mt-0 items-center">
+                @if($movement->status === 'COMPLETED')
+                    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400 border border-green-200 dark:border-green-500/30">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd"/>
+                        </svg>
+                        Recepción Completada
+                    </span>
+                @else
+                    <button id="btn-complete"
+                        class="btn bg-green-600 hover:bg-green-700 text-white inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd"/>
+                        </svg>
+                        Completar Recepción
+                    </button>
+                @endif
                 <a href="{{ route('reception.index') }}"
                    class="btn bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700/60 hover:border-gray-300 text-gray-600 dark:text-gray-300">
                     &larr; Regresar
@@ -38,6 +47,7 @@
                 @livewire('reception-scans.scan-panel', [
                     'movementId'   => $movement->id,
                     'initialScans' => $scans,
+                    'isCompleted'  => $movement->status === 'COMPLETED',
                 ])
             </div>
 
@@ -60,14 +70,16 @@
         const scanInput  = document.getElementById('scan-input');
         const scanResult = document.getElementById('scan-result');
 
-        // ── Auto-foco constante ─────────────────────────
-        scanInput.focus();
-        document.addEventListener('click', () => setTimeout(() => scanInput.focus(), 0));
-        document.addEventListener('keydown', (e) => {
-            if (!e.target.closest('button') && !e.target.closest('.swal2-container')) {
-                scanInput.focus();
-            }
-        });
+        // ── Auto-foco constante (solo si el input existe, es decir, no está completado) ──
+        if (scanInput) {
+            scanInput.focus();
+            document.addEventListener('click', () => setTimeout(() => scanInput.focus(), 0));
+            document.addEventListener('keydown', (e) => {
+                if (!e.target.closest('button') && !e.target.closest('.swal2-container')) {
+                    scanInput.focus();
+                }
+            });
+        }
 
         // ── Iconos HeroIcons para notificaciones ────────
         const ICONS = {
@@ -102,7 +114,7 @@
         }
 
         // ── Procesar escaneo al presionar Enter ─────────
-        scanInput.addEventListener('keydown', async (e) => {
+        scanInput?.addEventListener('keydown', async (e) => {
             if (e.key !== 'Enter') return;
             e.preventDefault();
 
@@ -133,18 +145,29 @@
         });
 
         // ── Completar recepción ──────────────────────────
-        document.getElementById('btn-complete').addEventListener('click', () => {
+        document.getElementById('btn-complete')?.addEventListener('click', () => {
+            const isDark = document.documentElement.classList.contains('dark');
+
             Swal.fire({
-                title: '¿Completar recepción?',
-                text: 'Se cerrará el movimiento y se actualizará el estado del documento.',
+                title: `<span class="text-lg font-bold">${'Completar recepción'}</span>`,
+                html: `
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                        Se cerrará el movimiento y no podrá escanearse más material.
+                    </div>
+                `,
                 icon: 'question',
+                iconColor: '#16a34a',
                 showCancelButton: true,
-                confirmButtonColor: '#16a34a',
-                cancelButtonColor: '#6b7280',
                 confirmButtonText: 'Sí, completar',
                 cancelButtonText: 'Cancelar',
-                background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-                color:      document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#1f2937',
+                reverseButtons: true,
+                buttonsStyling: false,
+                customClass: {
+                    confirmButton: 'inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg mx-2 transition-colors',
+                    cancelButton:  'inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg mx-2 transition-colors',
+                },
+                background: isDark ? '#111827' : '#ffffff',
+                color:      isDark ? '#f3f4f6' : '#1f2937',
             }).then(async (result) => {
                 if (!result.isConfirmed) return;
 
@@ -158,11 +181,14 @@
                 if (data.status === 'completed') {
                     Swal.fire({
                         title: '¡Recepción completada!',
+                        text: 'El movimiento fue cerrado correctamente.',
                         icon: 'success',
-                        timer: 1500,
+                        iconColor: '#16a34a',
+                        timer: 1800,
                         showConfirmButton: false,
-                        background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-                        color:      document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#1f2937',
+                        buttonsStyling: false,
+                        background: isDark ? '#111827' : '#ffffff',
+                        color:      isDark ? '#f3f4f6' : '#1f2937',
                     }).then(() => window.location.href = "{{ route('reception.index') }}");
                 }
             });
