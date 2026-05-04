@@ -9,12 +9,14 @@ use App\Models\StockMovement;
 use App\Models\StockMovementLine;
 use App\Models\TransactionType;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class MaterialOutputController extends Controller
 {
-    // ── Lista de entregas ────────────────────────────────────────────────
-
+    /**
+     *
+     */
     public function index(Request $request)
     {
         $search    = $request->get('search');
@@ -26,14 +28,16 @@ class MaterialOutputController extends Controller
             ->where('movement_type', 'OUTBOUND')
             ->where(function ($q) {
                 $q->whereHas('transactionType', fn($t) => $t->where('code', 'T'))
-                  ->orWhereNull('transaction_type_id');
+                    ->orWhereNull('transaction_type_id');
             })
             ->when($search, function ($q) use ($search) {
                 $q->where('movement_number', 'like', "%{$search}%")
-                  ->orWhereHas('lines.item', fn($i) => $i
-                      ->where('code', 'like', "%{$search}%")
-                      ->orWhere('description', 'like', "%{$search}%")
-                  );
+                    ->orWhereHas(
+                        'lines.item',
+                        fn($i) => $i
+                            ->where('code', 'like', "%{$search}%")
+                            ->orWhere('description', 'like', "%{$search}%")
+                    );
             })
             ->when($dateFrom && $dateTo, fn($q) => $q->whereBetween('movement_date', [$dateFrom, $dateTo]))
             ->orderByDesc('movement_date')
@@ -44,6 +48,9 @@ class MaterialOutputController extends Controller
         return view('material-outputs.index', compact('movements', 'search', 'dateRange'));
     }
 
+    /**
+     *
+     */
     private function parseDateRange(?string $dateRange): array
     {
         if (blank($dateRange) || ! str_contains($dateRange, ' - ')) {
@@ -62,8 +69,9 @@ class MaterialOutputController extends Controller
         }
     }
 
-    // ── Crear nuevo movimiento y redirigir al escaneo ────────────────────
-
+    /**
+     *
+     */
     public function store(Request $request)
     {
         $locationFrom    = Location::where('code', 'LIKE', 'L60%')->first();
@@ -86,8 +94,9 @@ class MaterialOutputController extends Controller
         return redirect()->route('material-outputs.show', $movement);
     }
 
-    // ── Regresar: eliminar movimiento si está vacío ──────────────────────
-
+    /**
+     *
+     */
     public function destroy(StockMovement $movement)
     {
         if ($movement->status === 'PENDING' && $movement->lines()->count() === 0) {
@@ -97,8 +106,9 @@ class MaterialOutputController extends Controller
         return redirect()->route('material-outputs.index');
     }
 
-    // ── Página de escaneo del movimiento ─────────────────────────────────
-
+    /**
+     *
+     */
     public function show(StockMovement $movement)
     {
         $movement->load(['locationFrom', 'locationTo', 'createdBy']);
@@ -106,8 +116,9 @@ class MaterialOutputController extends Controller
         return view('material-outputs.show', compact('movement'));
     }
 
-    // ── Procesar escaneo (AJAX) ──────────────────────────────────────────
-
+    /**
+     *
+     */
     public function scan(Request $request, StockMovement $movement)
     {
         if ($movement->status === 'COMPLETED') {
@@ -133,10 +144,10 @@ class MaterialOutputController extends Controller
                 return response()->json(['status' => 'error', 'message' => 'Artículo no encontrado: ' . $parsed['part_no']], 422);
             }
 
-            // Duplicado — el mismo serial no puede estar activo en ninguna salida
-            // (Si fue devuelto, la línea OUTBOUND se elimina, por lo que quedaría libre)
+            // Duplicado — excluye líneas ya devueltas (notes = 'RETURNED')
             if (! empty($parsed['serial'])) {
                 $isDuplicate = StockMovementLine::where('serial_batch_number', $parsed['serial'])
+                    ->where(fn($q) => $q->whereNull('notes')->orWhere('notes', '!=', 'RETURNED'))
                     ->whereHas('stockMovement', fn($q) => $q->where('movement_type', 'OUTBOUND'))
                     ->exists();
 
@@ -159,13 +170,26 @@ class MaterialOutputController extends Controller
                 ['opening_quantity' => 0, 'current_quantity' => 0, 'reserved_quantity' => 0]
             );
 
-            // Crear línea de movimiento
+            // Crear línea de salida (OUTBOUND — L60)
             $line = StockMovementLine::create([
                 'stock_movement_id'   => $movement->id,
                 'item_id'             => $item->id,
                 'quantity_received'   => $parsed['qty'],
                 'serial_batch_number' => $parsed['serial'] ?? null,
                 'unit_cost'           => $item->last_unit_cost,
+                'created_by_user_id'  => auth()->id(),
+                'updated_by_user_id'  => auth()->id(),
+            ]);
+
+            // Crear línea de entrada (INBOUND — L12) en movimiento compañero
+            $companion = $this->getOrCreateCompanionInbound($movement);
+            StockMovementLine::create([
+                'stock_movement_id'   => $companion->id,
+                'item_id'             => $item->id,
+                'quantity_received'   => $parsed['qty'],
+                'serial_batch_number' => $parsed['serial'] ?? null,
+                'unit_cost'           => $item->last_unit_cost,
+                'notes'               => "companion_of_line:{$line->id}",
                 'created_by_user_id'  => auth()->id(),
                 'updated_by_user_id'  => auth()->id(),
             ]);
@@ -182,7 +206,7 @@ class MaterialOutputController extends Controller
                     ['opening_quantity' => 0, 'current_quantity' => 0, 'reserved_quantity' => 0]
                 );
                 $balanceTo->current_quantity  += $parsed['qty'];
-                $balanceTo->last_movement_id   = $movement->id;
+                $balanceTo->last_movement_id   = $companion->id;
                 $balanceTo->last_movement_date = now();
                 $balanceTo->save();
             }
@@ -199,15 +223,15 @@ class MaterialOutputController extends Controller
                 'consignment_type' => $consignmentType,
                 'line_id'          => $line->id,
             ]);
-
         } catch (\Throwable $e) {
             DB::rollBack();
             return response()->json(['status' => 'error', 'message' => 'Error interno: ' . $e->getMessage()], 500);
         }
     }
 
-    // ── Finalizar movimiento ─────────────────────────────────────────────
-
+    /**
+     *
+     */
     public function complete(Request $request, StockMovement $movement)
     {
         if ($movement->status === 'COMPLETED') {
@@ -219,11 +243,16 @@ class MaterialOutputController extends Controller
             'updated_by_user_id' => auth()->id(),
         ]);
 
+        // Completar también el movimiento INBOUND compañero
+        StockMovement::where('notes', "companion_of:{$movement->movement_number}")
+            ->update(['status' => 'COMPLETED', 'updated_by_user_id' => Auth::id()]);
+
         return response()->json(['status' => 'completed', 'message' => 'Entrega finalizada correctamente.']);
     }
 
-    // ── Eliminar línea y crear retorno al almacén ────────────────────────
-
+    /**
+     *
+     */
     public function removeLine(StockMovement $movement, StockMovementLine $line)
     {
         if ($movement->status === 'COMPLETED') {
@@ -288,8 +317,11 @@ class MaterialOutputController extends Controller
                 $balanceL60->save();
             }
 
-            // Eliminar la línea del movimiento de salida
-            $line->delete();
+            // Marcar la línea OUTBOUND como devuelta (se conserva para el historial)
+            $line->update(['notes' => 'RETURNED']);
+
+            // Eliminar la línea INBOUND compañera que se creó al escanear
+            StockMovementLine::where('notes', "companion_of_line:{$line->id}")->delete();
 
             DB::commit();
 
@@ -297,11 +329,31 @@ class MaterialOutputController extends Controller
                 'status'  => 'success',
                 'message' => 'Línea eliminada. Material retornado al almacén de recibo.',
             ]);
-
         } catch (\Throwable $e) {
             DB::rollBack();
             return response()->json(['status' => 'error', 'message' => 'Error: ' . $e->getMessage()], 500);
         }
+    }
+
+    // ── Movimiento INBOUND compañero (L12) ──────────────────────────────────
+
+    private function getOrCreateCompanionInbound(StockMovement $outbound): StockMovement
+    {
+        return StockMovement::firstOrCreate(
+            ['notes' => "companion_of:{$outbound->movement_number}"],
+            [
+                'movement_number'     => 'INB-' . $outbound->movement_number,
+                'movement_date'       => $outbound->movement_date,
+                'movement_time'       => $outbound->movement_time,
+                'transaction_type_id' => $outbound->transaction_type_id,
+                'movement_type'       => 'INBOUND',
+                'location_id_from'    => $outbound->location_id_from,
+                'location_id_to'      => $outbound->location_id_to,
+                'status'              => 'PENDING',
+                'created_by_user_id'  => Auth::id(),
+                'updated_by_user_id'  => Auth::id(),
+            ]
+        );
     }
 
     // ── Parsers (mismos que ReceptionScanController) ─────────────────────

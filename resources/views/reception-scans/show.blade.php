@@ -1,4 +1,6 @@
 <x-app-layout>
+    <x-toast-notifications />
+
     <div class="px-2 sm:px-6 lg:px-8 py-4 w-full max-w-9xl mx-auto">
 
         {{-- Encabezado --}}

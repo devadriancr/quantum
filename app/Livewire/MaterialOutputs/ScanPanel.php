@@ -44,12 +44,17 @@ class ScanPanel extends Component
 
     public function render()
     {
+        $active = fn($q) => $q->whereNull('notes')->orWhere('notes', '!=', 'RETURNED');
+
         $scans = StockMovementLine::with('item')
             ->where('stock_movement_id', $this->movementId)
+            ->where($active)
             ->orderByDesc('id')
             ->paginate(10);
 
-        $total = StockMovementLine::where('stock_movement_id', $this->movementId)->count();
+        $total = StockMovementLine::where('stock_movement_id', $this->movementId)
+            ->where($active)
+            ->count();
 
         return view('livewire.material-outputs.scan-panel', compact('scans', 'total'));
     }

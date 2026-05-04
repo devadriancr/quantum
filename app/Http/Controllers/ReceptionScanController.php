@@ -111,7 +111,7 @@ class ReceptionScanController extends Controller
                 'status'               => 'PENDING',
             ]);
         }
-
+        dd($movement);
         $scans = ReceptionScan::where('stock_movement_id', $movement->id)
             ->with('matchedDocumentLine.item')
             ->orderByDesc('id')
