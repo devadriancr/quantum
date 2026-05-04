@@ -286,6 +286,19 @@
                                 </a>
                             </li>
 
+                            <!-- Salida a Línea de Producción -->
+                            <li class="mb-1 last:mb-0">
+                                <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'material-outputs'){{ 'text-violet-500!' }}@endif"
+                                href="{{ route('material-outputs.index') }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 shrink-0">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                                    </svg>
+                                    <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
+                                        {{ __('Salida a Producción') }}
+                                    </span>
+                                </a>
+                            </li>
+
                             <!-- Histórico de Movimientos -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'stock-movements'){{ 'text-violet-500!' }}@endif"
@@ -308,19 +321,6 @@
                                     </svg>
                                     <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
                                         {{ __('Inventario') }}
-                                    </span>
-                                </a>
-                            </li>
-
-                            <!-- Salida a Línea de Producción -->
-                            <li class="mb-1 last:mb-0">
-                                <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'material-outputs'){{ 'text-violet-500!' }}@endif"
-                                href="{{ route('material-outputs.index') }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 shrink-0">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
-                                    </svg>
-                                    <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                        {{ __('Salida a Producción') }}
                                     </span>
                                 </a>
                             </li>

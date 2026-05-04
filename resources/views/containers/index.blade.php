@@ -190,8 +190,7 @@
                                         {{-- Botón Eliminar --}}
                                         @php
                                             $canDelete = $container->status === 'PENDING'
-                                                && $container->stock_movements_count == 0;
-                                                // && !$container->has_registered_serials;
+                                                && $container->stock_movement_lines_count == 0;
                                         @endphp
                                         @if ($canDelete)
                                             <form action="{{ route('containers.destroy', $container) }}" method="POST" id="form-delete-{{ $container->id }}" class="inline">
@@ -208,7 +207,7 @@
                                             </form>
                                         @else
                                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-gray-100 dark:border-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed bg-gray-50/50 dark:bg-transparent"
-                                                title="{{ __('No se puede eliminar: contenedor con recepción activa o estado no pendiente') }}">
+                                                title="{{ __('No se puede eliminar: el documento tiene líneas registradas, estado no pendiente o tiene movimientos de inventario') }}">
                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
                                                 </svg>

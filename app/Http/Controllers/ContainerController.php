@@ -21,7 +21,7 @@ class ContainerController extends Controller
         [$dateFrom, $dateTo] = $this->parseDateRange($dateRange);
 
         $containers = Container::with('partner')
-            ->withCount('stockMovements')
+            ->withCount(['stockMovements', 'stockMovementLines'])
             ->when($search, function ($query, $search) {
                 $query->where('code', 'like', "%{$search}%")
                     ->orWhere('status', 'like', "%{$search}%");
@@ -225,21 +225,16 @@ class ContainerController extends Controller
                 ->with('error', 'No se puede eliminar un contenedor que no está en estado Pendiente.');
         }
 
-        if ($container->stockMovements()->exists()) {
+        if ($container->stockMovements()->whereHas('lines')->exists()) {
             return redirect()
                 ->route('containers.index')
-                ->with('error', 'No se puede eliminar un contenedor con movimientos de inventario registrados.');
+                ->with('error', 'No se puede eliminar un contenedor con movimientos registradas.');
         }
 
-        // $hasSerialsInLines = $container->shipmentDocuments()
-        //     ->whereHas('shipmentDocumentLines', fn($q) => $q->whereNotNull('serial_number'))
-        //     ->exists();
-
-        // if ($hasSerialsInLines) {
-        //     return redirect()
-        //         ->route('containers.index')
-        //         ->with('error', 'No se puede eliminar un contenedor con números de parte o serie registrados.');
-        // }
+        foreach ($container->stockMovements as $movement) {
+            $movement->lines()->delete();
+            $movement->delete();
+        }
 
         foreach ($container->shipmentDocuments as $document) {
             $document->shipmentDocumentLines()->delete();
