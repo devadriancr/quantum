@@ -72,6 +72,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::resource('stock-movements', StockMovementController::class)->only(['index', 'show']);
 
     Route::get('/inventory-balances', [InventoryBalanceController::class, 'index'])->name('inventory-balances.index');
+    Route::get('/inventory-balances/export', [InventoryBalanceController::class, 'export'])->name('inventory-balances.export');
     Route::get('/inventory-balances/{inventoryBalance}', [InventoryBalanceController::class, 'show'])->name('inventory-balances.show');
 
     Route::get('/material-outputs', [MaterialOutputController::class, 'index'])->name('material-outputs.index');

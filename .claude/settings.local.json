@@ -3,7 +3,8 @@
     "allow": [
       "Bash(php artisan *)",
       "Bash(mkdir -p c:/dev-ykm/quantum/app/Livewire/ReceptionScans)",
-      "Bash(mkdir -p c:/dev-ykm/quantum/resources/views/livewire/reception-scans)"
+      "Bash(mkdir -p c:/dev-ykm/quantum/resources/views/livewire/reception-scans)",
+      "Bash(composer show *)"
     ]
   }
 }

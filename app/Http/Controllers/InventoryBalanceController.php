@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\InventoryBalancesExport;
 use App\Models\InventoryBalance;
 use App\Models\StockMovementLine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class InventoryBalanceController extends Controller
 {
@@ -15,7 +17,7 @@ class InventoryBalanceController extends Controller
         $warehouse = $request->get('warehouse');
 
         $balances = InventoryBalance::with(['item', 'location.warehouse'])
-            ->whereHas('location', fn($q) => $q->where('code', 'like', 'L60%'))
+            ->whereHas('location', fn($q) => $q->where('code', 'like', 'L60%')->orWhere('code', 'like', 'L61%'))
             ->when($search, function ($q) use ($search) {
                 $q->whereHas(
                     'item',
@@ -56,11 +58,13 @@ class InventoryBalanceController extends Controller
                 ->groupBy(fn($r) => $r->item_id . '-' . $r->location_id)
                 ->map(fn($g) => $g->first());
 
-            // Salidas desde la ubicación
+            // Salidas desde la ubicación hacia L12 (consumo a producción)
             $outboundQtys = DB::table('stock_movements as sm')
                 ->join('stock_movement_lines as sml', 'sm.id', '=', 'sml.stock_movement_id')
+                ->join('locations as loc_to', 'loc_to.id', '=', 'sm.location_id_to')
                 ->select('sml.item_id', 'sm.location_id_from as location_id', DB::raw('SUM(sml.quantity_received) as total'))
                 ->where('sm.movement_type', 'OUTBOUND')
+                ->where('loc_to.code', 'like', 'L12%')
                 ->whereIn('sml.item_id', $itemIds)
                 ->whereIn('sm.location_id_from', $locationIds)
                 ->groupBy('sml.item_id', 'sm.location_id_from')
@@ -96,34 +100,79 @@ class InventoryBalanceController extends Controller
         ));
     }
 
-    public function show(InventoryBalance $inventoryBalance)
+    public function export(Request $request)
+    {
+        return Excel::download(
+            new InventoryBalancesExport($request->get('search'), $request->get('warehouse')),
+            'Inventory_' . now()->format('YmdHis') . '.xlsx'
+        );
+    }
+
+    public function show(Request $request, InventoryBalance $inventoryBalance)
     {
         $inventoryBalance->load(['item', 'location.warehouse']);
 
-        $movements = StockMovementLine::with([
-            'item',
-            'stockMovement.locationFrom',
-            'stockMovement.locationTo',
-            'stockMovement.container',
-            'stockMovement.createdBy',
-        ])
-            ->where('item_id', $inventoryBalance->item_id)
-            ->whereHas('stockMovement', function ($q) use ($inventoryBalance) {
-                $q->where(function ($inner) use ($inventoryBalance) {
-                    $inner->where('location_id_from', $inventoryBalance->location_id)
-                          ->orWhere('location_id_to', $inventoryBalance->location_id);
+        $search    = $request->get('search');
+        $dateRange = $request->get('date_range');
+
+        [$dateFrom, $dateTo] = $this->parseDateRange($dateRange);
+
+        $locationId = $inventoryBalance->location_id;
+
+        $movements = StockMovementLine::query()
+            ->with([
+                'stockMovement.locationFrom.warehouse',
+                'stockMovement.locationTo.warehouse',
+                'stockMovement.container',
+                'stockMovement.createdBy',
+            ])
+            ->join('stock_movements as sm', 'stock_movement_lines.stock_movement_id', '=', 'sm.id')
+            ->where('stock_movement_lines.item_id', $inventoryBalance->item_id)
+            ->where(function ($q) use ($locationId) {
+                // Entradas/devoluciones/ajustes: el destino es esta ubicación
+                $q->where(function ($inner) use ($locationId) {
+                    $inner->whereIn('sm.movement_type', ['INBOUND', 'RETURN', 'ADJUSTMENT'])
+                        ->where('sm.location_id_to', $locationId);
                 })
-                ->where(function ($inner) {
-                    $inner->whereHas('locationFrom', fn($l) => $l->where('code', 'like', 'L60%'))
-                          ->orWhereHas('locationTo',   fn($l) => $l->where('code', 'like', 'L60%'));
+                // Salidas/traspasos: el origen es esta ubicación
+                ->orWhere(function ($inner) use ($locationId) {
+                    $inner->whereIn('sm.movement_type', ['OUTBOUND', 'TRANSFER'])
+                        ->where('sm.location_id_from', $locationId);
                 });
             })
-            ->join('stock_movements', 'stock_movements.id', '=', 'stock_movement_lines.stock_movement_id')
-            ->orderByDesc('stock_movements.updated_at')
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($inner) use ($search) {
+                    $inner->where('sm.movement_number', 'like', "%{$search}%")
+                        ->orWhere('stock_movement_lines.serial_batch_number', 'like', "%{$search}%")
+                        ->orWhereHas('stockMovement.container', fn($c) => $c->where('code', 'like', "%{$search}%"));
+                });
+            })
+            ->when($dateFrom, fn($q) => $q->where('sm.movement_date', '>=', $dateFrom))
+            ->when($dateTo,   fn($q) => $q->where('sm.movement_date', '<=', $dateTo))
+            ->orderByDesc('sm.movement_date')
+            ->orderByDesc('sm.movement_time')
             ->select('stock_movement_lines.*')
-            ->paginate(10)
+            ->paginate(15)
             ->withQueryString();
 
-        return view('inventory-balances.show', compact('inventoryBalance', 'movements'));
+        return view('inventory-balances.show', compact('inventoryBalance', 'movements', 'search', 'dateRange'));
+    }
+
+    private function parseDateRange(?string $dateRange): array
+    {
+        if (blank($dateRange) || ! str_contains($dateRange, ' - ')) {
+            return [null, null];
+        }
+
+        [$fromStr, $toStr] = explode(' - ', $dateRange, 2);
+
+        try {
+            return [
+                \Carbon\Carbon::parse(trim($fromStr))->format('Y-m-d'),
+                \Carbon\Carbon::parse(trim($toStr))->format('Y-m-d'),
+            ];
+        } catch (\Exception) {
+            return [null, null];
+        }
     }
 }

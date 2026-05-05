@@ -10,6 +10,11 @@ class StockMovementController extends Controller
 {
     public function index(Request $request)
     {
+        $search    = $request->get('search');
+        $dateRange = $request->get('date_range');
+
+        [$dateFrom, $dateTo] = $this->parseDateRange($dateRange);
+
         $query = StockMovementLine::query()
             ->with([
                 'item',
@@ -24,13 +29,13 @@ class StockMovementController extends Controller
             ->leftJoin('items as it', 'stock_movement_lines.item_id', '=', 'it.id')
             ->select('stock_movement_lines.*');
 
-        if ($request->filled('search')) {
-            $search = '%' . $request->search . '%';
-            $query->where(function ($q) use ($search) {
-                $q->where('it.code', 'like', $search)
-                    ->orWhere('it.description', 'like', $search)
-                    ->orWhere('stock_movement_lines.serial_batch_number', 'like', $search)
-                    ->orWhereHas('stockMovement.container', fn($c) => $c->where('code', 'like', $search));
+        if ($search) {
+            $like = '%' . $search . '%';
+            $query->where(function ($q) use ($like) {
+                $q->where('it.code', 'like', $like)
+                    ->orWhere('it.description', 'like', $like)
+                    ->orWhere('stock_movement_lines.serial_batch_number', 'like', $like)
+                    ->orWhereHas('stockMovement.container', fn($c) => $c->where('code', 'like', $like));
             });
         }
 
@@ -38,18 +43,25 @@ class StockMovementController extends Controller
             $query->whereIn('sm.movement_type', (array) $request->movement_type);
         }
 
-        if ($request->filled('date_from')) {
-            $query->where('sm.movement_date', '>=', $request->date_from);
-        }
-
-        if ($request->filled('date_to')) {
-            $query->where('sm.movement_date', '<=', $request->date_to);
+        if ($dateFrom && $dateTo) {
+            $query->whereBetween('sm.movement_date', [$dateFrom, $dateTo]);
         }
 
         $lines = $query->orderByDesc('stock_movement_lines.created_at')
             ->paginate(10)
             ->withQueryString();
 
-        return view('stock-movements.index', compact('lines'));
+        return view('stock-movements.index', compact('lines', 'search', 'dateRange'));
+    }
+
+    private function parseDateRange(?string $dateRange): array
+    {
+        if (blank($dateRange) || ! str_contains($dateRange, ' - ')) {
+            return [null, null];
+        }
+
+        [$fromStr, $toStr] = explode(' - ', $dateRange, 2);
+
+        return [trim($fromStr), trim($toStr)];
     }
 }

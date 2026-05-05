@@ -1,41 +1,79 @@
 <x-app-layout>
     <div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
 
-        <div class="sm:flex sm:justify-between sm:items-center mb-8">
+        <div class="sm:flex sm:justify-between sm:items-start mb-8 gap-4">
             <div class="mb-4 sm:mb-0">
                 <h1 class="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">
                     {{ __('Histórico de Movimientos') }}
                 </h1>
             </div>
 
-            <div class="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
+            <div class="flex flex-col sm:flex-row gap-2 items-start sm:items-center flex-wrap">
 
-                {{-- Datepicker de rango --}}
-                <form method="GET" action="{{ route('stock-movements.index') }}" id="filter-form">
-                    @if(request('search'))
-                        <input type="hidden" name="search" value="{{ request('search') }}">
-                    @endif
+                {{-- Filtros: búsqueda + rango de fechas --}}
+                <form action="{{ route('stock-movements.index') }}" method="GET" id="filter-form"
+                      class="flex flex-col sm:flex-row gap-2 items-start sm:items-center flex-wrap">
+
                     @foreach((array) request('movement_type', []) as $mt)
                         <input type="hidden" name="movement_type[]" value="{{ $mt }}">
                     @endforeach
 
-                    <div class="relative">
+                    {{-- Búsqueda texto --}}
+                    <div class="relative flex items-center">
+                        <label for="action-search" class="sr-only">Buscar</label>
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <svg class="shrink-0 fill-current text-gray-400 dark:text-gray-500" width="16" height="16" viewBox="0 0 16 16">
+                                <path d="M7 14c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7zM7 2C4.243 2 2 4.243 2 7s2.243 5 5 5 5-2.243 5-5-2.243-5-5-5z"/>
+                                <path d="M15.707 14.293L13.314 11.9a8.019 8.019 0 01-1.414 1.414l2.393 2.393a.997.997 0 001.414 0 .999.999 0 000-1.414z"/>
+                            </svg>
+                        </div>
                         <input
-                            id="date-range-input"
-                            class="datepicker form-input pl-9 dark:bg-gray-800 text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100 font-medium w-[15.5rem]"
-                            placeholder="Seleccionar fechas"
-                            autocomplete="off"
-                            readonly
+                            id="action-search"
+                            name="search"
+                            value="{{ request('search') }}"
+                            class="form-input pl-9 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-violet-300 rounded-lg"
+                            type="search"
+                            placeholder="N° parte, descripción, serial, contenedor..."
                         />
-                        <input type="hidden" name="date_from" id="date_from" value="{{ request('date_from') }}">
-                        <input type="hidden" name="date_to"   id="date_to"   value="{{ request('date_to') }}">
-                        <div class="absolute inset-0 right-auto flex items-center pointer-events-none">
-                            <svg class="fill-current text-gray-400 dark:text-gray-500 ml-3" width="16" height="16" viewBox="0 0 16 16">
-                                <path d="M5 4a1 1 0 0 0 0 2h6a1 1 0 1 0 0-2H5Z"/>
-                                <path d="M4 0a4 4 0 0 0-4 4v8a4 4 0 0 0 4 4h8a4 4 0 0 0 4-4V4a4 4 0 0 0-4-4H4ZM2 4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4Z"/>
+                    </div>
+
+                    {{-- Datepicker rango de fechas --}}
+                    <div class="relative flex items-center">
+                        <input
+                            name="date_range"
+                            class="datepicker form-input pl-10 dark:bg-gray-800 text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100 font-medium w-[15.5rem]"
+                            placeholder="{{ __('Rango de fechas') }}"
+                            data-class="flatpickr-right"
+                            data-no-default
+                            data-selected="{{ $dateRange ?? '' }}"
+                        />
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="1.5"
+                                stroke="currentColor"
+                                class="shrink-0 text-gray-400 dark:text-gray-500"
+                                width="18"
+                                height="18">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
                             </svg>
                         </div>
                     </div>
+
+                    {{-- Botón Buscar (solo icono) --}}
+                    <button type="submit" class="inline-flex items-center justify-center p-2 bg-gray-800 hover:bg-gray-900 dark:bg-gray-100 dark:hover:bg-white text-white dark:text-gray-800 rounded-lg transition-colors shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 15.75-2.489-2.489m0 0a3.375 3.375 0 1 0-4.773-4.773 3.375 3.375 0 0 0 4.774 4.774ZM21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                    </button>
+
+                    @if($search || $dateRange)
+                        <a href="{{ route('stock-movements.index', array_filter(['movement_type' => request('movement_type')])) }}"
+                           class="text-sm text-gray-500 hover:text-violet-500 underline whitespace-nowrap ml-2">
+                            {{ __('Limpiar') }}
+                        </a>
+                    @endif
                 </form>
 
                 {{-- Filtro tipo de movimiento --}}
@@ -64,9 +102,8 @@
                         x-cloak
                     >
                         <form method="GET" action="{{ route('stock-movements.index') }}">
-                            @if(request('date_from'))<input type="hidden" name="date_from" value="{{ request('date_from') }}">@endif
-                            @if(request('date_to'))<input type="hidden" name="date_to" value="{{ request('date_to') }}">@endif
-                            @if(request('search'))<input type="hidden" name="search" value="{{ request('search') }}">@endif
+                            @if($dateRange)<input type="hidden" name="date_range" value="{{ $dateRange }}">@endif
+                            @if($search)<input type="hidden" name="search" value="{{ $search }}">@endif
                             <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase pt-1.5 pb-2 px-3">
                                 Tipo de movimiento
                             </div>
@@ -100,36 +137,6 @@
                         </form>
                     </div>
                 </div>
-
-                {{-- Búsqueda --}}
-                <form action="{{ route('stock-movements.index') }}" method="GET" class="relative flex items-center">
-                    @foreach((array) request('movement_type', []) as $mt)
-                        <input type="hidden" name="movement_type[]" value="{{ $mt }}">
-                    @endforeach
-                    @if(request('date_from'))<input type="hidden" name="date_from" value="{{ request('date_from') }}">@endif
-                    @if(request('date_to'))<input type="hidden" name="date_to" value="{{ request('date_to') }}">@endif
-                    <label for="action-search" class="sr-only">Buscar</label>
-                    <input
-                        id="action-search"
-                        name="search"
-                        class="form-input pl-9 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-violet-300 rounded-lg"
-                        type="search"
-                        placeholder="N° parte, descripción, serial, contenedor..."
-                        value="{{ request('search') }}"
-                    />
-                    <button class="absolute inset-0 right-auto group" type="submit" aria-label="Buscar">
-                        <svg class="shrink-0 fill-current text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400 ml-3 mr-2" width="16" height="16" viewBox="0 0 16 16">
-                            <path d="M7 14c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7zM7 2C4.243 2 2 4.243 2 7s2.243 5 5 5 5-2.243 5-5-2.243-5-5-5z" />
-                            <path d="M15.707 14.293L13.314 11.9a8.019 8.019 0 01-1.414 1.414l2.393 2.393a.997.997 0 001.414 0 .999.999 0 000-1.414z" />
-                        </svg>
-                    </button>
-                    @if(request('search'))
-                        <a href="{{ route('stock-movements.index', request()->except('search')) }}"
-                           class="ml-2 text-sm text-gray-500 hover:text-violet-500 underline whitespace-nowrap">
-                            Limpiar
-                        </a>
-                    @endif
-                </form>
 
             </div>
         </div>
@@ -293,28 +300,4 @@
 
     </div>
 
-    {{-- Flatpickr --}}
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
-    <script>
-        const currentDateFrom = document.getElementById('date_from').value;
-        const currentDateTo   = document.getElementById('date_to').value;
-        const fpConfig = {
-            mode: 'range',
-            dateFormat: 'Y-m-d',
-            locale: 'es',
-            onChange: function(selectedDates) {
-                if (selectedDates.length === 2) {
-                    document.getElementById('date_from').value = selectedDates[0].toISOString().split('T')[0];
-                    document.getElementById('date_to').value   = selectedDates[1].toISOString().split('T')[0];
-                    document.getElementById('filter-form').submit();
-                }
-            },
-        };
-        if (currentDateFrom && currentDateTo) {
-            fpConfig.defaultDate = [currentDateFrom, currentDateTo];
-        }
-        flatpickr('#date-range-input', fpConfig);
-    </script>
 </x-app-layout>
