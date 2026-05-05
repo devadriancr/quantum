@@ -25,8 +25,13 @@ class SyncStockLimitsJob implements ShouldQueue
      */
     public function handle(): void
     {
+        $startDate = Carbon::now()->subWeek()->startOfWeek()->format('Ymd');
+        $endDate   = Carbon::now()->endOfWeek()->format('Ymd');
+
         $forecastData = KMR::query()
             ->selectRaw('TRIM(MPROD) AS partNumber, MRDTE AS dateRequired, SUM(MQTY) AS quantityRequired')
+            ->where('MRDTE', '>=', $startDate)
+            ->where('MRDTE', '<=', $endDate)
             ->groupBy('MPROD', 'MRDTE')
             ->get();
 
@@ -43,17 +48,38 @@ class SyncStockLimitsJob implements ShouldQueue
         }
 
         $result = $allChildren
-            ->groupBy(fn($item) => $item['part_number'] . '-' . $item['required_date'])
-            ->map(function ($group) {
+            ->groupBy('part_number')
+            ->map(function ($partGroup, $partNumber) {
+
+                $byDate = $partGroup
+                    ->groupBy('required_date')
+                    ->map(fn($dateGroup) => $dateGroup->sum('required_quantity'));
+
+                $totalDays     = $byDate->count();
+                $totalQuantity = $byDate->sum();
+
+                $dailyAverage = $totalDays > 0
+                    ? round($totalQuantity / $totalDays, 4)
+                    : 0;
+
                 return [
-                    'part_number'       => $group->first()['part_number'],
-                    'parent_part_number' => $group->first()['parent_part_number'],
-                    'required_quantity' => $group->sum('required_quantity'),
-                    'required_date'     => $group->first()['required_date'],
+                    'part_number'        => $partNumber,
+                    'parent_part_number' => $partGroup->first()['parent_part_number'],
+                    'total_quantity'     => $totalQuantity,
+                    'total_days'         => $totalDays,
+                    'daily_average'      => $dailyAverage,
+                    'stock_min'          => ceil($dailyAverage * 2),
+                    'stock_max'          => ceil($dailyAverage * 5),
                 ];
             })
             ->values();
 
-        dd($result[0]);
+        foreach ($result as $data){
+            StoreStockLimitsJob::dispatch(
+                $data['part_number'],
+                $data['stock_min'],
+                $data['stock_max']
+            );
+        }
     }
 }

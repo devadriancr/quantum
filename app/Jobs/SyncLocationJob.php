@@ -30,7 +30,7 @@ class SyncLocationJob implements ShouldQueue
             ->get();
 
         foreach ($locations as $location) {
-            StoreLocationJob::dispatch($location->status, $location->warehouse, $location->code, $location->name);
+            StoreLocationJob::dispatch($location->status, trim($location->warehouse), trim($location->code), trim($location->name));
         }
     }
 }

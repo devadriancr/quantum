@@ -76,11 +76,11 @@ class InitDevCommand extends Command
             'params'  => [],
             'info'    => 'Sincronizando tipo de transacciones...'
         ],
-        // [
-        //     'command' => 'db:seed',
-        //     'params'  => ['--class' => 'ContainerDataSeeder'],
-        //     'info'    => 'Corriendo contenedores...'
-        // ]
+        [
+            'command' => 'sync:stock-limits',
+            'params'  => [],
+            'info'    => 'Sincronizando límites de stock...'
+        ]
     ];
 
     /**
