@@ -165,7 +165,10 @@
                                 <div class="font-semibold text-left">{{ __('Referencia') }}</div>
                             </th>
                             <th class="px-5 py-3 whitespace-nowrap">
-                                <div class="font-semibold text-left">{{ __('Ubicación') }}</div>
+                                <div class="font-semibold text-left">{{ __('Origen') }}</div>
+                            </th>
+                            <th class="px-5 py-3 whitespace-nowrap">
+                                <div class="font-semibold text-left">{{ __('Destino') }}</div>
                             </th>
                             <th class="px-5 py-3 whitespace-nowrap">
                                 <div class="font-semibold text-left">{{ __('Usuario') }}</div>
@@ -191,9 +194,8 @@
                                     'TRANSFER'   => 'Traspaso',
                                     'RETURN'     => 'Devolución',
                                 ];
-                                $location = $movType === 'OUTBOUND'
-                                    ? $mov?->locationFrom
-                                    : $mov?->locationTo;
+                                $locFrom = $mov?->locationFrom;
+                                $locTo   = $mov?->locationTo;
                             @endphp
                             <tr class="hover:bg-gray-50/50 dark:hover:bg-gray-900/10">
 
@@ -249,14 +251,31 @@
                                     @endif
                                 </td>
 
-                                {{-- Ubicación --}}
+                                {{-- Origen --}}
                                 <td class="px-5 py-3 whitespace-nowrap">
-                                    @if($location)
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400">
-                                            {{ $location->code }}
+                                    @if($locFrom)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400">
+                                            {{ $locFrom->code }}
                                         </span>
+                                        @if($locFrom->warehouse)
+                                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{{ $locFrom->warehouse->name }}</p>
+                                        @endif
                                     @else
-                                        <span class="text-gray-400">—</span>
+                                        <span class="text-xs text-gray-400 dark:text-gray-500">—</span>
+                                    @endif
+                                </td>
+
+                                {{-- Destino --}}
+                                <td class="px-5 py-3 whitespace-nowrap">
+                                    @if($locTo)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-400">
+                                            {{ $locTo->code }}
+                                        </span>
+                                        @if($locTo->warehouse)
+                                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{{ $locTo->warehouse->name }}</p>
+                                        @endif
+                                    @else
+                                        <span class="text-xs text-gray-400 dark:text-gray-500">—</span>
                                     @endif
                                 </td>
 
@@ -269,7 +288,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="px-5 py-10 text-center text-gray-500 dark:text-gray-400 text-sm">
+                                <td colspan="9" class="px-5 py-10 text-center text-gray-500 dark:text-gray-400 text-sm">
                                     {{ __('No se encontraron movimientos que coincidan con tu búsqueda.') }}
                                 </td>
                             </tr>

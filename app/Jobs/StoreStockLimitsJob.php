@@ -43,6 +43,6 @@ class StoreStockLimitsJob implements ShouldQueue
             'maximum_quantity' => $this->stockMax,
         ]);
 
-        Log::info("Stock limits for item {$this->partNumber} at location L60 have been updated: Min={$this->stockMin}, Max={$this->stockMax}");
+        // Log::info("Stock limits for item {$this->partNumber} at location L60 have been updated: Min={$this->stockMin}, Max={$this->stockMax}");
     }
 }

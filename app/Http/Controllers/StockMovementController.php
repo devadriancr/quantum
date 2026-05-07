@@ -20,8 +20,8 @@ class StockMovementController extends Controller
                 'item',
                 'stockMovement.container',
                 'stockMovement.transactionType',
-                'stockMovement.locationFrom',
-                'stockMovement.locationTo',
+                'stockMovement.locationFrom.warehouse',
+                'stockMovement.locationTo.warehouse',
                 'stockMovement.partner',
                 'stockMovement.createdBy',
             ])
