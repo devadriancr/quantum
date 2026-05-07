@@ -22,58 +22,42 @@ class YMCOM extends Model
     ];
 
     /**
-     * Obtiene recursivamente los hijos de un número de parte padre.
-     *
-     * @param string     $parentPartNumber  Número de parte padre
-     * @param float      $requiredQuantity  Cantidad requerida acumulada
-     * @param string     $requiredDate      Fecha requerida (del forecast)
-     * @param array      $processed         Control de ciclos (uso interno)
-     * @return Collection
+     * Retorna los hijos directos de un número de parte padre con la cantidad
+     * ya multiplicada por el forecast. Si se pasa $class, filtra por MCCCLS;
+     * si es null, regresa hijos de todas las clases.
      */
     public static function getChildren(
-        string $parentPartNumber,
-        float $requiredQuantity,
-        string $requiredDate,
-        array $processed = []
+        string  $parentPartNumber,
+        float   $requiredQuantity,
+        string  $requiredDate,
+        ?string $childClass = null
     ): Collection {
-        // Evitar ciclos infinitos
-        if (in_array($parentPartNumber, $processed)) {
-            return collect();
-        }
+        $parentPartNumber = trim($parentPartNumber);
 
-        $processed[] = $parentPartNumber;
+        $cacheKey = $childClass
+            ? "ymcom_children_{$parentPartNumber}_{$childClass}"
+            : "ymcom_children_{$parentPartNumber}_all";
 
-        // Cache por número de parte para no repetir queries a Infor
         $children = cache()->remember(
-            "ymcom_children_{$parentPartNumber}",
+            $cacheKey,
             now()->addMinutes(30),
-            fn () => self::whereRaw('TRIM(MCFPRO) = ?', [trim($parentPartNumber)])->get()
+            function () use ($parentPartNumber, $childClass) {
+                $query = self::whereRaw('TRIM(MCFPRO) = ?', [$parentPartNumber])
+                    ->whereRaw('TRIM(MCFPRO) != TRIM(MCCPRO)');
+
+                if ($childClass !== null) {
+                    $query->where('MCCCLS', $childClass);
+                }
+
+                return $query->get();
+            }
         );
 
-        $allChildren = collect();
-
-        foreach ($children as $child) {
-            $childPart  = trim($child->MCCPRO);
-            $parentPart = trim($child->MCFPRO);
-
-            // Ignorar auto-referencias y filtrar solo clase S1
-            if ($childPart === $parentPart || $child->MCCCLS !== 'S1') {
-                continue;
-            }
-
-            $allChildren->push([
-                'part_number'       => $childPart,
-                'parent_part_number'=> $parentPart,
-                'required_quantity' => $child->MCQREQ * $requiredQuantity,
-                'required_date'     => $requiredDate,
-            ]);
-
-            // Recursión para sub-hijos
-            $allChildren = $allChildren->merge(
-                self::getChildren($childPart, $child->MCQREQ * $requiredQuantity, $requiredDate, $processed)
-            );
-        }
-
-        return $allChildren;
+        return $children->map(fn ($child) => [
+            'part_number'        => trim($child->MCCPRO),
+            'parent_part_number' => $parentPartNumber,
+            'required_quantity'  => $child->MCQREQ * $requiredQuantity,
+            'required_date'      => $requiredDate,
+        ]);
     }
 }
