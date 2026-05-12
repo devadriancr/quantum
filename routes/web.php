@@ -27,6 +27,9 @@ use App\Http\Controllers\StockLimitController;
 use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\TransactionTypeController;
 use App\Http\Controllers\WarehouseController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -84,6 +87,10 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::delete('/material-outputs/{movement}', [MaterialOutputController::class, 'destroy'])->name('material-outputs.destroy');
 
     Route::resource('stock-limits', StockLimitController::class)->except(['show']);
+
+    Route::resource('roles', RoleController::class);
+    Route::resource('permissions', PermissionController::class)->except(['show']);
+    Route::resource('users', UserController::class)->except(['show']);
 
     Route::get('/ecommerce/customers', [CustomerController::class, 'index'])->name('customers');
     Route::get('/ecommerce/orders', [OrderController::class, 'index'])->name('orders');
