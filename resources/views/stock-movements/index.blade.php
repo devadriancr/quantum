@@ -235,19 +235,43 @@
 
                                 {{-- Cantidad --}}
                                 <td class="px-5 py-3 whitespace-nowrap text-right">
-                                    <span class="text-gray-800 dark:text-gray-100">
-                                        {{ number_format($line->quantity_received, 0) }}
+                                    @php
+                                        $qty = (float) $line->quantity_received;
+                                        if ($movType === 'ADJUSTMENT') {
+                                            $qtyColor  = $qty >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400';
+                                            $qtyPrefix = $qty >= 0 ? '+' : '';
+                                        } elseif (in_array($movType, ['INBOUND', 'RETURN'])) {
+                                            $qtyColor  = 'text-green-600 dark:text-green-400';
+                                            $qtyPrefix = '+';
+                                            $qty       = abs($qty);
+                                        } else {
+                                            $qtyColor  = 'text-red-500 dark:text-red-400';
+                                            $qtyPrefix = '−';
+                                            $qty       = abs($qty);
+                                        }
+                                    @endphp
+                                    <span class="{{ $qtyColor }}">
+                                        {{ $qtyPrefix }}{{ number_format($qty, 0) }}
                                     </span>
                                 </td>
 
-                                {{-- Referencia (contenedor para entradas) --}}
+                                {{-- Referencia --}}
                                 <td class="px-5 py-3 whitespace-nowrap">
-                                    @if($movType === 'INBOUND' && $mov?->container)
+                                    @if($movType === 'ADJUSTMENT' && $mov?->notes)
+                                        @php
+                                            preg_match('/\[(ADJ-[^\]]+)\]/', $mov->notes, $m);
+                                            $adjRef = $m[1] ?? $mov->movement_number;
+                                        @endphp
+                                        <a href="{{ route('inventory-adjustments.index', ['search' => $adjRef]) }}"
+                                           class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400 hover:underline">
+                                            {{ $adjRef }}
+                                        </a>
+                                    @elseif($mov?->container)
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
                                             {{ $mov->container->code }}
                                         </span>
                                     @else
-                                        <span class="text-gray-400">—</span>
+                                        <span class="text-gray-400 dark:text-gray-500">—</span>
                                     @endif
                                 </td>
 

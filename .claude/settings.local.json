@@ -4,7 +4,9 @@
       "Bash(php artisan *)",
       "Bash(mkdir -p c:/dev-ykm/quantum/app/Livewire/ReceptionScans)",
       "Bash(mkdir -p c:/dev-ykm/quantum/resources/views/livewire/reception-scans)",
-      "Bash(composer show *)"
+      "Bash(composer show *)",
+      "Bash(Get-ChildItem -Path . -Force)",
+      "Bash(Select-Object Name)"
     ]
   }
 }

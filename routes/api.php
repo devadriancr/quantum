@@ -17,3 +17,13 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+Route::middleware('auth:sanctum')->get('/inventory-balance', function (Request $request) {
+    $balance = \App\Models\InventoryBalance::where('item_id', $request->item_id)
+        ->where('location_id', $request->location_id)
+        ->first();
+
+    return response()->json([
+        'current_quantity' => $balance?->current_quantity ?? 0,
+    ]);
+});
