@@ -29,7 +29,9 @@ use App\Http\Controllers\TransactionTypeController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\InventoryAdjustmentController;
+use App\Http\Controllers\ItemCostController;
 use App\Http\Controllers\UserController;
 
 /*
@@ -90,6 +92,12 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::resource('stock-limits', StockLimitController::class)->except(['show']);
 
     Route::resource('inventory-adjustments', InventoryAdjustmentController::class)->only(['index', 'create', 'store', 'show']);
+
+    Route::resource('currencies', CurrencyController::class);
+    Route::post('currencies/refresh-rates', [CurrencyController::class, 'refreshRates'])->name('currencies.refresh-rates');
+
+    Route::get('/item-costs', [ItemCostController::class, 'index'])->name('item-costs.index');
+    Route::get('/item-costs/{item}', [ItemCostController::class, 'show'])->name('item-costs.show');
 
     Route::resource('roles', RoleController::class);
     Route::resource('permissions', PermissionController::class)->except(['show']);

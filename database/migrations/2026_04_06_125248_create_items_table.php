@@ -20,7 +20,8 @@ return new class extends Migration
             $table->foreignId('measurement_unit_id')->nullable()->constrained('measurement_units');
             $table->foreignId('packing_specification_id')->nullable()->constrained('packing_specifications');
             $table->integer('default_safety_stock')->nullable();
-            $table->decimal('last_unit_cost', 15, 2)->nullable();
+            $table->decimal('last_unit_cost', 15, 4)->nullable();
+            $table->string('last_currency_code', 10)->nullable();
             $table->boolean('active')->default(true);
             $table->foreignId('created_by_user_id')->nullable()->constrained('users');
             $table->foreignId('updated_by_user_id')->nullable()->constrained('users');

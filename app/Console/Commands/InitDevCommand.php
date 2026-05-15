@@ -80,6 +80,16 @@ class InitDevCommand extends Command
             'command' => 'sync:stock-limits',
             'params'  => [],
             'info'    => 'Sincronizando límites de stock...'
+        ],
+        [
+            'command' => 'db:seed',
+            'params'  => ['--class' => 'CurrencySeeder'],
+            'info'    => 'Sincronizando monedas...'
+        ],
+        [
+            'command' => 'artisan sync:vendor-item-costs',
+            'params'  => [],
+            'info'    => 'Sincronizando costos de artículos por proveedor...'
         ]
     ];
 
