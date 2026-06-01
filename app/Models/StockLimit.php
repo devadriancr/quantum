@@ -12,6 +12,7 @@ class StockLimit extends Model
     protected $fillable = [
         'item_id',
         'location_id',
+        'daily_average',
         'minimum_quantity',
         'maximum_quantity',
         'reorder_point',

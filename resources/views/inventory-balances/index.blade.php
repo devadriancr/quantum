@@ -75,10 +75,10 @@
                                 <div class="font-semibold text-left">Últ. Entrada</div>
                             </th>
                             <th class="px-5 py-3 whitespace-nowrap">
-                                <div class="font-semibold text-center">Cant. Consumido</div>
+                                <div class="font-semibold text-center">Consumo Promedio</div>
                             </th>
                             <th class="px-5 py-3 whitespace-nowrap">
-                                <div class="font-semibold text-center">Cant. Actual</div>
+                                <div class="font-semibold text-center">Cant. en Inventario</div>
                             </th>
                             <th class="px-5 py-3 whitespace-nowrap">
                                 <div class="font-semibold text-center">DOH</div>
@@ -98,10 +98,8 @@
                                 $stockLimit = $stockLimitsMap[$key] ?? null;
                                 $qty        = $balance->current_quantity;
                                 $lastIn     = $lastInbounds[$key] ?? null;
-                                $outbound = isset($outboundQtys[$key]) ? (float) $outboundQtys[$key]->total : 0;
-                                $returns  = isset($returnQtys[$key])   ? (float) $returnQtys[$key]->total   : 0;
-                                $consumed = max(0, $outbound - $returns);
-                                $doh      = $consumed > 0 ? round($qty / $consumed) : null;
+                                $dailyAvg = $stockLimit?->daily_average ?? 0;
+                                $doh      = $dailyAvg > 0 ? round($qty / ceil($dailyAvg), 2) : null;
 
                                 $rowClass = '';
                                 if ($stockLimit) {
@@ -133,17 +131,17 @@
                                             {{ \Carbon\Carbon::parse($lastIn->movement_date)->format('d-m-Y') }}
                                         </p>
                                         <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                            {{ $lastIn->movement_time ? substr($lastIn->movement_time, 0, 5) : '' }}
+                                            {{ $lastIn->movement_time ? substr($lastIn->movement_time, 0, 8) : '' }}
                                         </p>
                                     @else
                                         <span class="text-xs text-gray-400 dark:text-gray-500">—</span>
                                     @endif
                                 </td>
 
-                                {{-- Cantidad Consumida --}}
+                                {{-- Consumo Promedio --}}
                                 <td class="px-5 py-3 whitespace-nowrap text-center">
                                     <span class="text-xs text-gray-700 dark:text-gray-200">
-                                        {{ $consumed > 0 ? number_format($consumed, 0, '.', '') : '—' }}
+                                        {{ $dailyAvg > 0 ? number_format(ceil($dailyAvg), 0, '.', '') : '—' }}
                                     </span>
                                 </td>
 
@@ -183,7 +181,7 @@
                                             @else bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300
                                             @endif
                                         ">
-                                            {{ number_format($doh, 0, '.', '') }}
+                                            {{ number_format($doh, 2) }}
                                         </span>
                                     @else
                                         <span class="text-xs text-gray-400 dark:text-gray-500">—</span>

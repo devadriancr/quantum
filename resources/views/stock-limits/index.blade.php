@@ -68,6 +68,9 @@
                                 <div class="font-semibold text-left">{{ __('Ubicación') }}</div>
                             </th>
                             <th class="px-5 py-3 whitespace-nowrap">
+                                <div class="font-semibold text-right">{{ __('Promedio') }}</div>
+                            </th>
+                            <th class="px-5 py-3 whitespace-nowrap">
                                 <div class="font-semibold text-right">{{ __('Mínimo') }}</div>
                             </th>
                             <th class="px-5 py-3 whitespace-nowrap">
@@ -100,6 +103,13 @@
                                 <td class="px-5 py-3 whitespace-nowrap">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400">
                                         {{ $limit->location?->code ?? '—' }}
+                                    </span>
+                                </td>
+
+                                {{-- Promedio --}}
+                                <td class="px-5 py-3 whitespace-nowrap text-right">
+                                    <span class="text-gray-700 dark:text-gray-300">
+                                        {{ number_format($limit->daily_average, 2) }}
                                     </span>
                                 </td>
 
@@ -144,7 +154,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-5 py-12 text-center text-gray-400 dark:text-gray-500 text-sm">
+                                <td colspan="7" class="px-5 py-12 text-center text-gray-400 dark:text-gray-500 text-sm">
                                     @if($search)
                                         No se encontraron límites que coincidan con la búsqueda.
                                     @else

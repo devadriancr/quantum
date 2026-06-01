@@ -19,6 +19,14 @@
                         Recepción Completada
                     </span>
                 @else
+                    <button
+                        onclick="document.getElementById('modal-import-scans').classList.remove('hidden')"
+                        class="btn bg-blue-600 hover:bg-blue-700 text-white inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                        </svg>
+                        Importar Excel
+                    </button>
                     <button id="btn-complete"
                         class="btn bg-green-600 hover:bg-green-700 text-white inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4">
@@ -61,6 +69,74 @@
 
         </div>
     </div>
+
+    {{-- Modal Importar Excel --}}
+    <div id="modal-import-scans" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+
+            <div class="flex items-center justify-between mb-5">
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                    Importar códigos desde Excel
+                </h2>
+                <button
+                    onclick="document.getElementById('modal-import-scans').classList.add('hidden')"
+                    class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                El archivo debe contener una columna con encabezado <span class="font-semibold text-gray-700 dark:text-gray-200">CODE</span>. Cada fila se procesará igual que un escaneo manual.
+            </p>
+
+            <form action="{{ route('reception.import-scans', $shipmentDocument) }}" method="POST" enctype="multipart/form-data">
+                @csrf
+
+                <div class="mb-5">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Archivo Excel <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="file"
+                        name="excel_file"
+                        accept=".xlsx,.xls,.csv"
+                        required
+                        class="block w-full text-sm text-gray-700 dark:text-gray-300
+                               file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0
+                               file:text-sm file:font-semibold
+                               file:bg-blue-50 file:text-blue-700
+                               hover:file:bg-blue-100 dark:file:bg-blue-500/20 dark:file:text-blue-300
+                               border border-gray-200 dark:border-gray-700 rounded-lg p-1 bg-white dark:bg-gray-900"
+                    />
+                </div>
+
+                <div class="flex justify-end gap-3">
+                    <button
+                        type="button"
+                        onclick="document.getElementById('modal-import-scans').classList.add('hidden')"
+                        class="px-4 py-2 rounded-lg text-sm font-medium border border-gray-300 dark:border-gray-600
+                               text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        Cancelar
+                    </button>
+                    <button
+                        type="submit"
+                        class="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700
+                               text-white shadow-sm transition-colors">
+                        Importar
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('modal-import-scans').addEventListener('click', function (e) {
+            if (e.target === this) this.classList.add('hidden');
+        });
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>

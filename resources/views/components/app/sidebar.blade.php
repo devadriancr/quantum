@@ -259,10 +259,10 @@
                 </li>
 
                 <!-- Operaciones -->
-                <li class="pl-4 pr-3 py-2 rounded-lg mb-0.5 last:mb-0 bg-linear-to-r @if(in_array(Request::segment(1), ['containers', 'reception', 'stock-movements', 'inventory-balances', 'material-outputs', 'inventory-adjustments'])){{ 'from-violet-500/[0.12] dark:from-violet-500/[0.24] to-violet-500/[0.04]' }}@endif"
-                    x-data="{ open: {{ in_array(Request::segment(1), ['containers', 'reception', 'stock-movements', 'inventory-balances', 'material-outputs', 'inventory-adjustments']) ? 1 : 0 }} }">
+                <li class="pl-4 pr-3 py-2 rounded-lg mb-0.5 last:mb-0 bg-linear-to-r @if(in_array(Request::segment(1), ['containers', 'reception', 'stock-movements', 'inventory-balances', 'material-outputs', 'inventory-adjustments', 'unit-plans'])){{ 'from-violet-500/[0.12] dark:from-violet-500/[0.24] to-violet-500/[0.04]' }}@endif"
+                    x-data="{ open: {{ in_array(Request::segment(1), ['containers', 'reception', 'stock-movements', 'inventory-balances', 'material-outputs', 'inventory-adjustments', 'unit-plans']) ? 1 : 0 }} }">
 
-                    <a class="block text-gray-800 dark:text-gray-100 truncate transition @if(!in_array(Request::segment(1), ['containers', 'reception', 'stock-movements', 'inventory-balances', 'material-outputs', 'inventory-adjustments'])){{ 'hover:text-gray-900 dark:hover:text-white' }}@endif"
+                    <a class="block text-gray-800 dark:text-gray-100 truncate transition @if(!in_array(Request::segment(1), ['containers', 'reception', 'stock-movements', 'inventory-balances', 'material-outputs', 'inventory-adjustments', 'unit-plans'])){{ 'hover:text-gray-900 dark:hover:text-white' }}@endif"
                     href="#0" @click.prevent="open = !open; sidebarExpanded = true">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
@@ -283,7 +283,7 @@
                     </a>
 
                     <div class="lg:hidden lg:sidebar-expanded:block 2xl:block">
-                        <ul class="pl-8 mt-1 @if(!in_array(Request::segment(1), ['containers', 'reception', 'stock-movements', 'inventory-balances', 'material-outputs', 'inventory-adjustments'])){{ 'hidden' }}@endif"
+                        <ul class="pl-8 mt-1 @if(!in_array(Request::segment(1), ['containers', 'reception', 'stock-movements', 'inventory-balances', 'material-outputs', 'inventory-adjustments', 'unit-plans'])){{ 'hidden' }}@endif"
                             :class="open ? 'block!' : 'hidden'">
 
                             <!-- Contenedores -->
@@ -360,6 +360,19 @@
                                     </svg>
                                     <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
                                         {{ __('Ajustes de Inventario') }}
+                                    </span>
+                                </a>
+                            </li>
+
+                            <!-- Planeación de Unidades -->
+                            <li class="mb-1 last:mb-0">
+                                <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'unit-plans'){{ 'text-violet-500!' }}@endif"
+                                href="{{ route('unit-plans.index') }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 shrink-0">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" />
+                                    </svg>
+                                    <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
+                                        {{ __('Planeación de Unidades') }}
                                     </span>
                                 </a>
                             </li>

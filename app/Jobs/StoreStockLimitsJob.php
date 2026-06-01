@@ -13,16 +13,18 @@ class StoreStockLimitsJob implements ShouldQueue
 {
     use Queueable;
 
-    private $partNumber;
-    private $stockMin;
-    private $stockMax;
+    private string $partNumber;
+    private float $dailyAverage;
+    private int $stockMin;
+    private int $stockMax;
 
     /**
      * Create a new job instance.
      */
-    public function __construct(String $partNumber, int $stockMin, int $stockMax)
+    public function __construct(String $partNumber, float $dailyAverage, int $stockMin, int $stockMax)
     {
         $this->partNumber = $partNumber;
+        $this->dailyAverage = $dailyAverage;
         $this->stockMin = $stockMin;
         $this->stockMax = $stockMax;
     }
@@ -39,6 +41,7 @@ class StoreStockLimitsJob implements ShouldQueue
             'item_id' => $item->id,
             'location_id' => $location->id,
         ], [
+            'daily_average' => $this->dailyAverage,
             'minimum_quantity' => $this->stockMin,
             'maximum_quantity' => $this->stockMax,
         ]);

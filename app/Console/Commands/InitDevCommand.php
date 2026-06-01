@@ -87,7 +87,7 @@ class InitDevCommand extends Command
             'info'    => 'Sincronizando monedas...'
         ],
         [
-            'command' => 'artisan sync:vendor-item-costs',
+            'command' => 'sync:vendor-item-costs',
             'params'  => [],
             'info'    => 'Sincronizando costos de artículos por proveedor...'
         ]

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Imports\ReceptionScansImport;
 use App\Models\InventoryBalance;
 use App\Models\Item;
 use App\Models\Location;
@@ -13,6 +14,7 @@ use App\Models\StockMovementLine;
 use App\Models\TransactionType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReceptionScanController extends Controller
 {
@@ -300,6 +302,40 @@ class ReceptionScanController extends Controller
                 'status'  => 'error',
                 'message' => 'Error interno: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    public function importScans(Request $request, ShipmentDocument $shipmentDocument)
+    {
+        $request->validate([
+            'excel_file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:10240'],
+        ], [
+            'excel_file.required' => 'Debes seleccionar un archivo.',
+            'excel_file.mimes'    => 'El archivo debe ser de tipo Excel (.xlsx, .xls) o CSV.',
+            'excel_file.max'      => 'El archivo no debe superar los 10 MB.',
+        ]);
+
+        $movement = StockMovement::where('shipment_document_id', $shipmentDocument->id)
+            ->whereIn('status', ['PENDING', 'RECEIVED'])
+            ->latest()
+            ->firstOrFail();
+
+        try {
+            $import = new ReceptionScansImport($shipmentDocument, $movement);
+            Excel::import($import, $request->file('excel_file'));
+
+            $msg = "Importación completada: {$import->processed} códigos procesados.";
+            if ($import->skipped > 0) {
+                $msg .= " {$import->skipped} filas omitidas.";
+            }
+
+            return redirect()
+                ->route('reception.show', $shipmentDocument)
+                ->with('success', $msg);
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('reception.show', $shipmentDocument)
+                ->with('error', 'Error al procesar el archivo: ' . $e->getMessage());
         }
     }
 

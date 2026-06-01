@@ -13,6 +13,7 @@ return new class extends Migration
             $table->foreignId('item_id')->constrained('items');
             $table->foreignId('location_id')->constrained('locations');
             $table->unique(['item_id', 'location_id']);
+            $table->decimal('daily_average', 15, 4)->default(0);
             $table->decimal('minimum_quantity', 15, 2)->default(0);
             $table->decimal('maximum_quantity', 15, 2)->default(0);
             $table->decimal('reorder_point', 15, 2)->default(0);

@@ -33,6 +33,7 @@ use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\InventoryAdjustmentController;
 use App\Http\Controllers\ItemCostController;
 use App\Http\Controllers\UserController;
+use App\Livewire\UnitPlanBoard;
 
 /*
 |--------------------------------------------------------------------------
@@ -74,6 +75,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/reception/{shipmentDocument}/scan', [ReceptionScanController::class, 'show'])->name('reception.show');
     Route::post('/reception/{shipmentDocument}/scan', [ReceptionScanController::class, 'scan'])->name('reception.scan');
     Route::post('/reception/{shipmentDocument}/complete', [ReceptionScanController::class, 'complete'])->name('reception.complete');
+    Route::post('/reception/{shipmentDocument}/import-scans', [ReceptionScanController::class, 'importScans'])->name('reception.import-scans');
 
     Route::resource('stock-movements', StockMovementController::class)->only(['index', 'show']);
 
@@ -92,6 +94,8 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::resource('stock-limits', StockLimitController::class)->except(['show']);
 
     Route::resource('inventory-adjustments', InventoryAdjustmentController::class)->only(['index', 'create', 'store', 'show']);
+
+    Route::get('/unit-plans', UnitPlanBoard::class)->name('unit-plans.index');
 
     Route::resource('currencies', CurrencyController::class);
     Route::post('currencies/refresh-rates', [CurrencyController::class, 'refreshRates'])->name('currencies.refresh-rates');

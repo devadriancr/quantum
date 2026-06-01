@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(php artisan view:clear)",
+      "Bash(curl -sk -o /dev/null -w \"HTTP %{http_code}\\\\n\" --max-time 4 \"http://[::1]:5173/@vite/client\")",
+      "Bash(curl -sk -o /dev/null -w \"HTTP %{http_code}\\\\n\" --max-time 4 \"http://[::1]:5173/resources/css/app.css\")"
+    ]
+  }
+}
