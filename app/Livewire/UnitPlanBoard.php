@@ -99,6 +99,7 @@ class UnitPlanBoard extends Component
         $pool             = [];
         $itemsByContainer = [];
         $itemIdByCode     = [];
+        $unitCostByCode   = [];
 
         foreach ($groups as $g) {
             $pool[$g['date']] = [
@@ -112,6 +113,9 @@ class UnitPlanBoard extends Component
                     $itemsDict[$item['item_code']] = (float) $item['quantity'];
                     if (!empty($item['item_id']) && !isset($itemIdByCode[$item['item_code']])) {
                         $itemIdByCode[$item['item_code']] = $item['item_id'];
+                    }
+                    if (!isset($unitCostByCode[$item['item_code']])) {
+                        $unitCostByCode[$item['item_code']] = (float) ($item['unit_cost'] ?? 0);
                     }
                 }
                 $pool[$g['date']]['containers'][$c['code']] = (float) $c['total_cost'];
@@ -150,6 +154,7 @@ class UnitPlanBoard extends Component
         return [
             'pool'               => $pool,
             'items_by_container' => $itemsByContainer,
+            'unit_cost_by_code'  => $unitCostByCode,
             'stock_by_code'      => $stockByCode,
             'total_containers'   => $this->totalContainers,
         ];

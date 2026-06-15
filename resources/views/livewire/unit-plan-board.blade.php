@@ -111,6 +111,73 @@
         </template>
     </div>
 
+    {{-- ─────────────────── Modal: detalle de contenedor ─────────────────── --}}
+    <div x-show="detailModal.open" x-cloak
+         class="fixed inset-0 z-[60] flex items-center justify-center p-4"
+         @keydown.escape.window="closeContainerItems()">
+        {{-- Fondo --}}
+        <div x-show="detailModal.open"
+             x-transition:enter="transition ease-out duration-150"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-100"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="absolute inset-0 bg-gray-900/50"
+             @click="closeContainerItems()"></div>
+
+        {{-- Panel --}}
+        <div x-show="detailModal.open"
+             x-transition:enter="transition ease-out duration-150"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-100"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-2xl max-h-[75vh] flex flex-col">
+
+            <div class="flex items-center justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700/60">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white truncate" x-text="detailModal.code"></h3>
+                <span class="shrink-0 text-lg font-bold text-gray-900 dark:text-white" x-text="formatMoney(lookupPrice(detailModal.code))"></span>
+            </div>
+
+            <div class="overflow-y-auto">
+                <table class="w-full text-sm">
+                    <thead class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-b border-gray-100 dark:border-gray-700/60 sticky top-0">
+                        <tr>
+                            <th class="px-6 py-2.5 text-left">{{ __('N° de Parte') }}</th>
+                            <th class="px-6 py-2.5 text-right">{{ __('Cantidad') }}</th>
+                            <th class="px-6 py-2.5 text-right">{{ __('Precio') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="row in modalItems" :key="row.code">
+                            <tr class="border-b border-gray-100 dark:border-gray-700/60 hover:bg-gray-50/60 dark:hover:bg-gray-900/20">
+                                <td class="px-6 py-2 text-gray-900 dark:text-white" x-text="row.code"></td>
+                                <td class="px-6 py-2 text-right tabular-nums font-semibold text-gray-900 dark:text-white" x-text="formatQty(row.qty)"></td>
+                                <td class="px-6 py-2 text-right tabular-nums font-semibold text-gray-900 dark:text-white" x-text="formatMoney(row.price)"></td>
+                            </tr>
+                        </template>
+                        <template x-if="modalItems.length === 0">
+                            <tr>
+                                <td colspan="3" class="px-6 py-8 text-center text-sm text-gray-500 italic">
+                                    {{ __('Sin números de parte para este contenedor.') }}
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="px-6 py-3 border-t border-gray-100 dark:border-gray-700/60 flex justify-end">
+                <button type="button" @click="closeContainerItems()"
+                        class="btn-sm border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors">
+                    {{ __('Cerrar') }}
+                </button>
+            </div>
+        </div>
+    </div>
+
     {{-- ─────────────────── Tablero de horarios ─────────────────── --}}
     <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl border border-gray-200 dark:border-gray-700/60 overflow-x-auto">
         <table class="w-full table-fixed dark:text-gray-300">
@@ -139,9 +206,18 @@
                                      :data-day="day.value"
                                      :data-slot="slotIdx">
                                     <template x-if="getCell(day.value, slotIdx)">
-                                        <div class="kanban-card w-full bg-violet-100 dark:bg-violet-900/40 border border-violet-400 text-violet-800 dark:text-violet-200 rounded px-2 py-2 text-center cursor-move shadow-sm"
+                                        <div class="kanban-card relative w-full bg-violet-100 dark:bg-violet-900/40 border border-violet-400 text-violet-800 dark:text-violet-200 rounded px-2 py-2 text-center cursor-move shadow-sm"
                                              :data-container-code="getCell(day.value, slotIdx).code">
-                                            <p class="font-bold text-xs truncate" x-text="getCell(day.value, slotIdx).code"></p>
+                                            <button type="button"
+                                                    class="no-drag absolute top-1 right-1 p-0.5 rounded text-violet-500 hover:text-violet-800 hover:bg-violet-200/70 dark:text-violet-300 dark:hover:bg-violet-700/60"
+                                                    title="{{ __('Ver números de parte') }}"
+                                                    @click.stop="showContainerItems(getCell(day.value, slotIdx).code)">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-3.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                                </svg>
+                                            </button>
+                                            <p class="font-bold text-xs truncate pr-4" x-text="getCell(day.value, slotIdx).code"></p>
                                             <p class="font-bold text-xs opacity-75 mt-0.5" x-text="formatMoney(getCell(day.value, slotIdx).price)"></p>
                                         </div>
                                     </template>
@@ -196,7 +272,18 @@
                 </button>
             </div>
 
-            <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl border border-gray-200 dark:border-gray-700/60 overflow-auto max-h-[500px]">
+            <div x-show="projection.length === 0"
+                 class="bg-white dark:bg-gray-800 shadow-xs rounded-xl border border-dashed border-gray-300 dark:border-gray-700/60 p-12 text-center">
+                <div class="flex flex-col items-center gap-3 text-gray-400 dark:text-gray-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-12 opacity-50">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z" />
+                    </svg>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ __('Sin datos para mostrar') }}</p>
+                    <p class="text-xs text-gray-400">{{ __('Arrastra un contenedor al tablero para ver la proyección.') }}</p>
+                </div>
+            </div>
+
+            <div x-show="projection.length > 0" class="bg-white dark:bg-gray-800 shadow-xs rounded-xl border border-gray-200 dark:border-gray-700/60 overflow-auto max-h-[500px]">
                 <table class="w-full table-fixed dark:text-gray-300">
                     <thead class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-b border-gray-100 dark:border-gray-700/60 sticky top-0 z-10">
                         <tr>
@@ -207,21 +294,6 @@
                         </tr>
                     </thead>
                     <tbody class="text-sm">
-                        {{-- Estado vacío (sin asignaciones) --}}
-                        <template x-if="projection.length === 0">
-                            <tr>
-                                <td :colspan="days.length + 1" class="px-3 py-12 text-center">
-                                    <div class="flex flex-col items-center gap-2 text-gray-400 dark:text-gray-500">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-10 opacity-50">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z" />
-                                        </svg>
-                                        <p class="text-sm font-medium">{{ __('Sin datos para mostrar') }}</p>
-                                        <p class="text-xs text-gray-400">{{ __('Arrastra un contenedor al tablero para ver la proyección.') }}</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        </template>
-
                         {{-- Sin coincidencias en búsqueda --}}
                         <template x-if="projection.length > 0 && filteredProjection.length === 0">
                             <tr>
@@ -338,13 +410,21 @@
                             </span>
                         </div>
 
-                        {{-- Grid con más columnas: las cards quedan del mismo tamaño que las del schedule --}}
-                        <div class="kanban-pool grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6 gap-2 min-h-20"
+                        <div class="kanban-pool grid content-start grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 min-h-20"
                              :data-pool-date="date">
                             <template x-for="(price, code) in bucket.containers" :key="code">
-                                <div class="kanban-card bg-violet-100 dark:bg-violet-900/40 border border-violet-400 text-violet-800 dark:text-violet-200 rounded px-2 py-2 text-center cursor-move hover:shadow-md transition-shadow"
+                                <div class="kanban-card relative flex flex-col justify-center bg-violet-100 dark:bg-violet-900/40 border border-violet-400 text-violet-800 dark:text-violet-200 rounded-lg px-3 py-2 text-center cursor-move hover:shadow-md transition-shadow"
                                      :data-container-code="code">
-                                    <p class="font-bold text-xs truncate" x-text="code"></p>
+                                    <button type="button"
+                                            class="no-drag absolute top-1 right-1 p-0.5 rounded text-violet-500 hover:text-violet-800 hover:bg-violet-200/70 dark:text-violet-300 dark:hover:bg-violet-700/60"
+                                            title="{{ __('Ver números de parte') }}"
+                                            @click.stop="showContainerItems(code)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-3.5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                        </svg>
+                                    </button>
+                                    <p class="font-bold text-xs truncate pr-5" x-text="code"></p>
                                     <p class="font-bold text-xs opacity-75 mt-0.5" x-text="formatMoney(price)"></p>
                                 </div>
                             </template>
@@ -357,6 +437,7 @@
 
     {{-- ─────────────────── Estilos ─────────────────── --}}
     <style>
+        [x-cloak] { display: none !important; }
         .kanban-card, .kanban-slot, .kanban-pool {
             user-select: none;
             -webkit-user-select: none;
@@ -398,6 +479,9 @@
         itemSearch: '',
         projectionSearch: '',
 
+        // ─── Modal de detalle de contenedor ───
+        detailModal: { open: false, code: null },
+
         init() {
             this.$wire.on('excel-loaded', (event) => {
                 const payload = Array.isArray(event) ? event[0] : event;
@@ -420,6 +504,13 @@
             this.$watch('assignments', () => {
                 this.$nextTick(() => this.initSortables());
             });
+
+            this.$watch('containerSearch', () => {
+                this.$nextTick(() => this.initSortables());
+            });
+            this.$watch('itemSearch', () => {
+                this.$nextTick(() => this.initSortables());
+            });
         },
 
         // ─── Helpers de formato contable ───
@@ -434,6 +525,11 @@
         formatInt(value) {
             const n = Math.round(parseFloat(value || 0));
             return n.toLocaleString('en-US');
+        },
+
+        formatQty(value) {
+            const n = parseFloat(value || 0);
+            return n.toLocaleString('en-US', { maximumFractionDigits: 2 });
         },
 
         // ─── Computed ───
@@ -594,6 +690,24 @@
             this.assignments = next;
         },
 
+        // ─── Modal: números de parte de un contenedor ───
+        get modalItems() {
+            if (!this.excelData || !this.detailModal.code) return [];
+            const items = this.excelData.items_by_container[this.detailModal.code] || {};
+            const costs = this.excelData.unit_cost_by_code || {};
+            return Object.entries(items)
+                .map(([code, qty]) => ({ code, qty, price: qty * (costs[code] || 0) }))
+                .sort((a, b) => a.code.localeCompare(b.code));
+        },
+
+        showContainerItems(code) {
+            this.detailModal = { open: true, code };
+        },
+
+        closeContainerItems() {
+            this.detailModal = { open: false, code: null };
+        },
+
         // ─── Drag & drop ───
         initSortables() {
             document.querySelectorAll('.kanban-slot, .kanban-pool').forEach(el => {
@@ -618,32 +732,46 @@
                 ghostClass: 'kanban-ghost',
                 chosenClass: 'kanban-chosen',
                 revertOnSpill: true, // si se suelta fuera, regresa a su origen
+                filter: '.no-drag',  // botones dentro de la card no inician arrastre
+                preventOnFilter: false,
+
+                // Recordamos de dónde salió la card para poder devolverla a mano.
+                // Alpine es la única fuente de verdad del DOM; Sortable solo es el
+                // mecanismo de arrastre.
+                onStart(evt) {
+                    evt.item._homeParent = evt.from;
+                    evt.item._homeNext   = evt.item.nextElementSibling;
+                },
+
                 onEnd(evt) {
                     const code = evt.item.dataset.containerCode;
                     const dest = evt.to;
 
-                    // Siempre quitar el nodo movido por Sortable; Alpine pintará el correcto
-                    evt.item.remove();
-
-                    let stateChanged = false;
-
                     if (dest && dest.classList.contains('kanban-slot')) {
+                        // Drop válido en una celda: quitamos el nodo que movió
+                        // Sortable y dejamos que Alpine pinte la card en la celda.
+                        evt.item.remove();
                         const day  = parseInt(dest.dataset.day, 10);
                         const slot = parseInt(dest.dataset.slot, 10);
                         self.assignContainer(code, day, slot);
-                        stateChanged = true;
-                    } else if (dest && dest.classList.contains('kanban-pool')) {
-                        if (code in self.assignments) {
-                            self.unassignContainer(code);
-                            stateChanged = true;
+                    } else if (dest && dest.classList.contains('kanban-pool') && (code in self.assignments)) {
+                        // Regresó al pool una card que estaba asignada: desasignar.
+                        evt.item.remove();
+                        self.unassignContainer(code);
+                    } else {
+                        // Drop SIN cambio de estado: fuera de la tabla, en un hueco
+                        // entre celdas, o de vuelta al mismo pool sin asignar. Sortable
+                        // ya movió/sacó el nodo, pero Alpine NO recrea nodos con la
+                        // misma key, así que la card "desaparece". Lo arreglamos
+                        // devolviendo el nodo a su posición original a mano.
+                        const home = evt.item._homeParent;
+                        if (home) {
+                            home.insertBefore(evt.item, evt.item._homeNext || null);
                         }
                     }
 
-                    // Si no hubo cambio real (drop fuera, mismo pool, etc.),
-                    // forzar re-render para que la card vuelva a su lugar original
-                    if (!stateChanged) {
-                        self.assignments = { ...self.assignments };
-                    }
+                    evt.item._homeParent = null;
+                    evt.item._homeNext   = null;
                 },
             };
 
