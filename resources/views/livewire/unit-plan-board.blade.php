@@ -314,9 +314,7 @@
                                 </td>
                                 <template x-for="(value, i) in row.byDay" :key="'pd-' + row.code + '-' + i">
                                     <td class="px-3 py-3 text-right border-l border-gray-100 dark:border-gray-700/60 text-sm tabular-nums"
-                                        :class="(i === 0 ? value > row.start : value > row.byDay[i-1])
-                                            ? 'font-bold text-green-700 dark:text-green-400 bg-green-50/40 dark:bg-green-900/10'
-                                            : 'text-gray-500 dark:text-gray-400'"
+                                        :class="cellStockClass(value, row.min, row.max)"
                                         x-text="formatInt(value)"></td>
                                 </template>
                             </tr>
@@ -601,6 +599,7 @@
 
             const itemsByContainer = this.excelData.items_by_container;
             const stockByCode      = this.excelData.stock_by_code;
+            const limitsByCode     = this.excelData.limits_by_code || {};
 
             const perItemDay = {};
             for (const [code, pos] of Object.entries(this.assignments)) {
@@ -613,17 +612,34 @@
 
             const rows = [];
             for (const [code, byDay] of Object.entries(perItemDay)) {
-                const start = stockByCode[code] || 0;
+                const start  = stockByCode[code] || 0;
+                const limits = limitsByCode[code] || { min: null, max: null, daily: 0 };
+                const daily  = limits.daily || 0;
                 let running = start;
                 const cumulative = [];
                 for (let d = 0; d < 6; d++) {
-                    running += byDay[d];
+                    // Cada día entra lo de los contenedores asignados y se
+                    // descuenta el consumo promedio diario (redondeado hacia arriba).
+                    running += byDay[d] - daily;
                     cumulative.push(running);
                 }
-                rows.push({ code, start, byDay: cumulative });
+                rows.push({ code, start, byDay: cumulative, min: limits.min, max: limits.max });
             }
-            rows.sort((a, b) => a.code.localeCompare(b.code));
+            // De menor a mayor según el inventario actual del item.
+            rows.sort((a, b) => a.start - b.start);
             return rows;
+        },
+
+        // Color de la celda según el stock mínimo/máximo del item:
+        // por debajo del mínimo → rojo, por encima del máximo → amarillo,
+        // entre ambos → verde. Sin límites configurados → neutro.
+        cellStockClass(value, min, max) {
+            if (min === null || min === undefined || max === null || max === undefined) {
+                return 'text-gray-500 dark:text-gray-400';
+            }
+            if (value <= min) return 'font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20';
+            if (value >= max) return 'font-bold text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20';
+            return 'font-bold text-green-700 dark:text-green-400 bg-green-50/60 dark:bg-green-900/20';
         },
 
         // ─── Helpers del tablero ───

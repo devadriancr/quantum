@@ -124,7 +124,8 @@ class UnitPlanBoard extends Component
         }
 
         // Inventario actual: 1 query agregada
-        $stockByCode = [];
+        $stockByCode  = [];
+        $limitsByCode = [];
         if (!empty($itemIdByCode)) {
             $stocks = InventoryBalance::whereIn('item_id', array_values($itemIdByCode))
                 ->select('item_id', DB::raw('SUM(current_quantity) as total'))
@@ -132,6 +133,30 @@ class UnitPlanBoard extends Component
                 ->pluck('total', 'item_id');
             foreach ($itemIdByCode as $code => $id) {
                 $stockByCode[$code] = (float) ($stocks[$id] ?? 0);
+            }
+
+            // Límites de stock por item (mín, máx, consumo diario promedio).
+            // Se agregan por item_id porque el inventario también se suma
+            // entre ubicaciones. El consumo diario se redondea hacia arriba.
+            $limits = \App\Models\StockLimit::where('active', true)
+                ->whereIn('item_id', array_values($itemIdByCode))
+                ->select(
+                    'item_id',
+                    DB::raw('SUM(minimum_quantity) as min_qty'),
+                    DB::raw('SUM(maximum_quantity) as max_qty'),
+                    DB::raw('SUM(daily_average) as daily_avg'),
+                )
+                ->groupBy('item_id')
+                ->get()
+                ->keyBy('item_id');
+
+            foreach ($itemIdByCode as $code => $id) {
+                $lim = $limits->get($id);
+                $limitsByCode[$code] = [
+                    'min'   => $lim ? (float) $lim->min_qty : null,
+                    'max'   => $lim ? (float) $lim->max_qty : null,
+                    'daily' => $lim ? (int) ceil((float) $lim->daily_avg) : 0,
+                ];
             }
         }
 
@@ -156,6 +181,7 @@ class UnitPlanBoard extends Component
             'items_by_container' => $itemsByContainer,
             'unit_cost_by_code'  => $unitCostByCode,
             'stock_by_code'      => $stockByCode,
+            'limits_by_code'     => $limitsByCode,
             'total_containers'   => $this->totalContainers,
         ];
     }
