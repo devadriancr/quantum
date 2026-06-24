@@ -36,6 +36,7 @@
                 </form>
 
                 {{-- Nuevo --}}
+                @can('create inventory-adjustments')
                 <a href="{{ route('inventory-adjustments.create') }}"
                    class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-4 mr-1">
@@ -43,6 +44,7 @@
                     </svg>
                     {{ __('Nuevo Ajuste') }}
                 </a>
+                @endcan
 
             </div>
         </div>

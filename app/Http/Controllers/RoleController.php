@@ -55,7 +55,8 @@ class RoleController extends Controller
             'warehouses', 'locations', 'partners', 'projects', 'project-prefixes',
             'packing-specifications', 'transaction-types', 'containers',
             'reception', 'stock-movements', 'inventory-balances', 'material-outputs',
-            'stock-limits', 'roles', 'permissions', 'users',
+            'stock-limits', 'currencies', 'item-costs', 'inventory-adjustments',
+            'unit-plans', 'roles', 'permissions', 'users',
         ];
 
         $assigned = $role->permissions->pluck('name')->toArray();

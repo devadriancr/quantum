@@ -81,10 +81,14 @@
                                 'transaction-types' => 'Tipos de Transacción',
                                 'containers' => 'Contenedores',
                                 'reception' => 'Recepción de Material',
-                                'stock-movements' => 'Movimientos de Stock',
+                                'stock-movements' => 'Histórico de Movimientos',
                                 'inventory-balances' => 'Inventario',
                                 'material-outputs' => 'Salidas de Material',
                                 'stock-limits' => 'Límites de Stock',
+                                'currencies' => 'Monedas',
+                                'item-costs' => 'Historial de Costos',
+                                'inventory-adjustments' => 'Ajustes de Inventario',
+                                'unit-plans' => 'Planeación de Unidades',
                                 'roles' => 'Roles',
                                 'permissions' => 'Permisos',
                                 'users' => 'Usuarios',
@@ -127,6 +131,31 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        @php
+                            // Permisos que no siguen el patrón "{acción} {módulo}" de la matriz
+                            $standardNames = collect($modules)->keys()
+                                ->crossJoin(array_keys($actions))
+                                ->map(fn ($p) => "{$p[1]} {$p[0]}")
+                                ->all();
+                            $specialPerms = $permissions->flatten()
+                                ->reject(fn ($p) => in_array($p->name, $standardNames));
+                        @endphp
+                        @if($specialPerms->isNotEmpty())
+                            <div class="px-5 py-4 border-t border-gray-100 dark:border-gray-700/60">
+                                <h3 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-3">Permisos Especiales</h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    @foreach($specialPerms as $perm)
+                                        <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                                            <input type="checkbox" name="permissions[]" value="{{ $perm->id }}"
+                                                   class="perm-checkbox rounded border-gray-300 dark:border-gray-600 text-violet-500 focus:ring-violet-400"
+                                                   {{ in_array($perm->id, old('permissions', [])) ? 'checked' : '' }}>
+                                            {{ $perm->label ?: $perm->name }}
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
                         @error('permissions')
                             <p class="text-red-500 text-xs px-5 py-2">{{ $message }}</p>
                         @enderror

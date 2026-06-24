@@ -36,6 +36,7 @@
                 </form>
 
                 {{-- Nuevo --}}
+                @can('create stock-limits')
                 <a href="{{ route('stock-limits.create') }}"
                    class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-4 mr-1">
@@ -43,6 +44,7 @@
                     </svg>
                     {{ __('Nuevo') }}
                 </a>
+                @endcan
 
             </div>
         </div>
@@ -130,6 +132,7 @@
                                 {{-- Acciones --}}
                                 <td class="px-5 py-3 whitespace-nowrap text-right">
                                     <div class="flex justify-end gap-3">
+                                        @can('edit stock-limits')
                                         <a href="{{ route('stock-limits.edit', $limit) }}"
                                            class="inline-flex items-center gap-1 font-medium text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 text-sm">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
@@ -137,6 +140,8 @@
                                             </svg>
                                             Editar
                                         </a>
+                                        @endcan
+                                        @can('delete stock-limits')
                                         <form method="POST" action="{{ route('stock-limits.destroy', $limit) }}"
                                               onsubmit="return confirm('¿Eliminar este límite de stock?')">
                                             @csrf
@@ -149,6 +154,7 @@
                                                 Eliminar
                                             </button>
                                         </form>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

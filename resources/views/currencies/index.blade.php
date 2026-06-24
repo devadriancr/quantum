@@ -24,6 +24,7 @@
                 </form>
 
                 {{-- Actualizar tasas --}}
+                @can('refresh currencies')
                 <form action="{{ route('currencies.refresh-rates') }}" method="POST" class="flex items-center">
                     @csrf
                     <button type="submit"
@@ -34,8 +35,10 @@
                         Actualizar tasas
                     </button>
                 </form>
+                @endcan
 
                 {{-- Nueva --}}
+                @can('create currencies')
                 <a href="{{ route('currencies.create') }}"
                    class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white inline-flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-4 mr-1">
@@ -43,6 +46,7 @@
                     </svg>
                     Nueva Moneda
                 </a>
+                @endcan
             </div>
         </div>
 
@@ -88,6 +92,7 @@
                                 </td>
                                 <td class="px-5 py-3 whitespace-nowrap text-right">
                                     <div class="flex justify-end gap-2">
+                                        @can('edit currencies')
                                         <a href="{{ route('currencies.edit', $currency) }}"
                                            class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-600 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-3.5">
@@ -95,8 +100,10 @@
                                             </svg>
                                             Editar
                                         </a>
+                                        @endcan
 
                                         {{-- Formulario modificado con data-code para personalizar la alerta --}}
+                                        @can('delete currencies')
                                         <form method="POST" action="{{ route('currencies.destroy', $currency) }}" data-code="{{ $currency->code }}">
                                             @csrf @method('DELETE')
                                             <button type="button" onclick="confirmDelete(this)"
@@ -107,6 +114,7 @@
                                                 Eliminar
                                             </button>
                                         </form>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

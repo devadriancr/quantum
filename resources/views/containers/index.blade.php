@@ -79,6 +79,7 @@
 
             {{-- Header de la tarjeta con botones --}}
             <div class="flex items-center justify-end gap-2 px-5 py-4 border-b border-gray-100 dark:border-gray-700/60">
+                @can('create containers')
                 <a href="{{ route('containers.create') }}"
                    class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-800 hover:bg-blue-900 dark:bg-blue-100 dark:hover:bg-white dark:text-blue-800 text-white text-sm font-medium rounded-lg transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
@@ -86,6 +87,8 @@
                     </svg>
                     {{ __('Nuevo Contenedor') }}
                 </a>
+                @endcan
+                @can('create containers')
                 <button
                     onclick="document.getElementById('modal-import').classList.remove('hidden')"
                     class="inline-flex items-center gap-1.5 px-4 py-2 bg-green-800 hover:bg-green-900 dark:bg-green-100 dark:hover:bg-white dark:text-green-800 text-white text-sm font-medium rounded-lg transition-colors">
@@ -94,6 +97,7 @@
                     </svg>
                     {{ __('Importar Excel') }}
                 </button>
+                @endcan
             </div>
 
             <div class="overflow-x-auto">
@@ -169,6 +173,7 @@
                                         </a>
 
                                         {{-- Botón Editar --}}
+                                        @can('edit containers')
                                         @if ($container->status === 'PENDING')
                                             <a href="{{ route('containers.edit', $container) }}"
                                             class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-amber-200 dark:border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors">
@@ -186,8 +191,10 @@
                                                 {{ __('Editar') }}
                                             </span>
                                         @endif
+                                        @endcan
 
                                         {{-- Botón Eliminar --}}
+                                        @can('delete containers')
                                         @php
                                             $canDelete = $container->status === 'PENDING'
                                                 && $container->stock_movement_lines_count == 0;
@@ -214,6 +221,7 @@
                                                 {{ __('Eliminar') }}
                                             </span>
                                         @endif
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

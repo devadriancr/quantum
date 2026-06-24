@@ -42,6 +42,7 @@
                     <span class="lg:hidden lg:sidebar-expanded:block 2xl:block">Pages</span>
                 </h3>
                 <ul>
+                @canany(['view warehouses', 'view items', 'view item-classes', 'view packing-specifications', 'view project-prefixes', 'view projects', 'view partners', 'view item-types', 'view transaction-types', 'view locations', 'view measurement-units', 'view stock-limits', 'view currencies', 'view item-costs'])
                 <!-- Administración -->
                 <li class="pl-4 pr-3 py-2 rounded-lg mb-0.5 last:mb-0 bg-linear-to-r @if(in_array(Request::segment(1), ['item-types', 'item-classes', 'measurement-units', 'warehouses', 'locations', 'partners', 'projects', 'project-prefixes', 'items', 'packing-specifications', 'transaction-types', 'stock-limits', 'currencies', 'item-costs'])){{ 'from-violet-500/[0.12] dark:from-violet-500/[0.24] to-violet-500/[0.04]' }}@endif"
                     x-data="{ open: {{ in_array(Request::segment(1), ['item-types', 'item-classes', 'measurement-units', 'warehouses', 'locations', 'partners', 'projects', 'project-prefixes', 'items', 'packing-specifications', 'transaction-types', 'stock-limits', 'currencies', 'item-costs']) ? 1 : 0 }} }">
@@ -70,6 +71,7 @@
                         <ul class="pl-8 mt-1 @if(!in_array(Request::segment(1), ['item-types', 'item-classes', 'measurement-units', 'warehouses', 'locations', 'partners', 'projects', 'project-prefixes', 'items', 'packing-specifications', 'transaction-types', 'stock-limits', 'currencies', 'item-costs'])){{ 'hidden' }}@endif"
                             :class="open ? 'block!' : 'hidden'">
 
+                            @can('view warehouses')
                             <!-- Almacenes -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'warehouses'){{ 'text-violet-500!' }}@endif"
@@ -83,6 +85,9 @@
                                 </a>
                             </li>
 
+                            @endcan
+
+                            @can('view items')
                             <!-- Artículos -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'items'){{ 'text-violet-500!' }}@endif"
@@ -96,6 +101,9 @@
                                 </a>
                             </li>
 
+                            @endcan
+
+                            @can('view item-classes')
                             <!-- Clases de Artículos -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'item-classes'){{ 'text-violet-500!' }}@endif"
@@ -109,6 +117,9 @@
                                 </a>
                             </li>
 
+                            @endcan
+
+                            @can('view packing-specifications')
                             <!-- Especificaciones de Empaque -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'packing-specifications'){{ 'text-violet-500!' }}@endif"
@@ -122,6 +133,9 @@
                                 </a>
                             </li>
 
+                            @endcan
+
+                            @can('view project-prefixes')
                             <!-- Prefijos de Proyecto -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'project-prefixes'){{ 'text-violet-500!' }}@endif"
@@ -135,6 +149,9 @@
                                 </a>
                             </li>
 
+                            @endcan
+
+                            @can('view projects')
                             <!-- Proyectos -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'projects'){{ 'text-violet-500!' }}@endif"
@@ -148,6 +165,9 @@
                                 </a>
                             </li>
 
+                            @endcan
+
+                            @can('view partners')
                             <!-- Socios -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'partners'){{ 'text-violet-500!' }}@endif"
@@ -161,6 +181,9 @@
                                 </a>
                             </li>
 
+                            @endcan
+
+                            @can('view item-types')
                             <!-- Tipos de Artículos -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'item-types'){{ 'text-violet-500!' }}@endif"
@@ -175,6 +198,9 @@
                                 </a>
                             </li>
 
+                            @endcan
+
+                            @can('view transaction-types')
                             <!-- Tipos de Transacción -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'transaction-types'){{ 'text-violet-500!' }}@endif"
@@ -188,6 +214,9 @@
                                 </a>
                             </li>
 
+                            @endcan
+
+                            @can('view locations')
                             <!-- Ubicaciones -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'locations'){{ 'text-violet-500!' }}@endif"
@@ -202,6 +231,9 @@
                                 </a>
                             </li>
 
+                            @endcan
+
+                            @can('view measurement-units')
                             <!-- Unidades de Medida -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'measurement-units'){{ 'text-violet-500!' }}@endif"
@@ -215,6 +247,9 @@
                                 </a>
                             </li>
 
+                            @endcan
+
+                            @can('view stock-limits')
                             <!-- Límites de Stock -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'stock-limits'){{ 'text-violet-500!' }}@endif"
@@ -228,6 +263,9 @@
                                 </a>
                             </li>
 
+                            @endcan
+
+                            @can('view currencies')
                             <!-- Monedas -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'currencies'){{ 'text-violet-500!' }}@endif"
@@ -241,6 +279,9 @@
                                 </a>
                             </li>
 
+                            @endcan
+
+                            @can('view item-costs')
                             <!-- Historial de Costos -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'item-costs'){{ 'text-violet-500!' }}@endif"
@@ -253,12 +294,15 @@
                                     </span>
                                 </a>
                             </li>
+                            @endcan
 
                         </ul>
                     </div>
                 </li>
+                @endcanany
 
                 <!-- Operaciones -->
+                @canany(['view containers', 'view reception', 'view material-outputs', 'view stock-movements', 'view inventory-balances', 'view inventory-adjustments', 'view unit-plans'])
                 <li class="pl-4 pr-3 py-2 rounded-lg mb-0.5 last:mb-0 bg-linear-to-r @if(in_array(Request::segment(1), ['containers', 'reception', 'stock-movements', 'inventory-balances', 'material-outputs', 'inventory-adjustments', 'unit-plans'])){{ 'from-violet-500/[0.12] dark:from-violet-500/[0.24] to-violet-500/[0.04]' }}@endif"
                     x-data="{ open: {{ in_array(Request::segment(1), ['containers', 'reception', 'stock-movements', 'inventory-balances', 'material-outputs', 'inventory-adjustments', 'unit-plans']) ? 1 : 0 }} }">
 
@@ -286,6 +330,7 @@
                         <ul class="pl-8 mt-1 @if(!in_array(Request::segment(1), ['containers', 'reception', 'stock-movements', 'inventory-balances', 'material-outputs', 'inventory-adjustments', 'unit-plans'])){{ 'hidden' }}@endif"
                             :class="open ? 'block!' : 'hidden'">
 
+                            @can('view containers')
                             <!-- Contenedores -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'containers'){{ 'text-violet-500!' }}@endif"
@@ -299,6 +344,9 @@
                                 </a>
                             </li>
 
+                            @endcan
+
+                            @can('view reception')
                             <!-- Recepción de Material -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'reception'){{ 'text-violet-500!' }}@endif"
@@ -312,6 +360,9 @@
                                 </a>
                             </li>
 
+                            @endcan
+
+                            @can('view material-outputs')
                             <!-- Salida a Línea de Producción -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'material-outputs'){{ 'text-violet-500!' }}@endif"
@@ -325,6 +376,9 @@
                                 </a>
                             </li>
 
+                            @endcan
+
+                            @can('view stock-movements')
                             <!-- Histórico de Movimientos -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'stock-movements'){{ 'text-violet-500!' }}@endif"
@@ -338,6 +392,9 @@
                                 </a>
                             </li>
 
+                            @endcan
+
+                            @can('view inventory-balances')
                             <!-- Inventario -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'inventory-balances'){{ 'text-violet-500!' }}@endif"
@@ -351,6 +408,9 @@
                                 </a>
                             </li>
 
+                            @endcan
+
+                            @can('view inventory-adjustments')
                             <!-- Ajustes de Inventario -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'inventory-adjustments'){{ 'text-violet-500!' }}@endif"
@@ -364,6 +424,9 @@
                                 </a>
                             </li>
 
+                            @endcan
+
+                            @can('view unit-plans')
                             <!-- Planeación de Unidades -->
                             <li class="mb-1 last:mb-0">
                                 <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'unit-plans'){{ 'text-violet-500!' }}@endif"
@@ -376,10 +439,12 @@
                                     </span>
                                 </a>
                             </li>
+                            @endcan
 
                         </ul>
                     </div>
                 </li>
+                @endcanany
 
                 <!-- Control de Acceso -->
                 @canany(['view roles', 'view users', 'view permissions'])

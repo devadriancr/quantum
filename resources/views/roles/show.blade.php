@@ -54,10 +54,14 @@
                             'transaction-types' => 'Tipos de Transacción',
                             'containers' => 'Contenedores',
                             'reception' => 'Recepción de Material',
-                            'stock-movements' => 'Movimientos de Stock',
+                            'stock-movements' => 'Histórico de Movimientos',
                             'inventory-balances' => 'Inventario',
                             'material-outputs' => 'Salidas de Material',
                             'stock-limits' => 'Límites de Stock',
+                            'currencies' => 'Monedas',
+                            'item-costs' => 'Historial de Costos',
+                            'inventory-adjustments' => 'Ajustes de Inventario',
+                            'unit-plans' => 'Planeación de Unidades',
                             'roles' => 'Roles',
                             'permissions' => 'Permisos',
                             'users' => 'Usuarios',
@@ -87,6 +91,31 @@
                 </tbody>
             </table>
         </div>
+
+        @php
+            $standardShow = collect($modules)
+                ->crossJoin(['create', 'view', 'edit', 'delete'])
+                ->map(fn ($p) => "{$p[1]} {$p[0]}")
+                ->all();
+            $specialAssigned = $role->permissions->reject(fn ($p) => in_array($p->name, $standardShow));
+        @endphp
+        @if($specialAssigned->isNotEmpty())
+            <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl border border-gray-200 dark:border-gray-700/60 mt-6">
+                <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700/60">
+                    <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Permisos Especiales</h2>
+                </div>
+                <ul class="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    @foreach($specialAssigned as $perm)
+                        <li class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5 text-green-500">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd" />
+                            </svg>
+                            {{ $perm->label ?: $perm->name }}
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
     </div>
 </x-app-layout>

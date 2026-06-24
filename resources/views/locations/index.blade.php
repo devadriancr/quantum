@@ -95,6 +95,7 @@
                                             </svg>
                                             {{ __('Ver') }}
                                         </a>
+                                        @can('edit locations')
                                         <a href="{{ route('locations.edit', $location) }}"
                                            class="inline-flex items-center gap-1 font-medium text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 text-sm">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
@@ -102,6 +103,7 @@
                                             </svg>
                                             {{ __('Editar') }}
                                         </a>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

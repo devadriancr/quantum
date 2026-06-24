@@ -6,10 +6,12 @@
                 <h1 class="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">{{ __('Unidades de Medida') }}</h1>
             </div>
             <div class="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
+                @can('create measurement-units')
                 <a href="{{ route('measurement-units.create') }}"
                    class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white">
                     {{ __('Agregar Unidad de Medida') }}
                 </a>
+                @endcan
             </div>
         </div>
 
@@ -67,6 +69,7 @@
                                         </svg>
                                         {{ __('Ver') }}
                                     </a>
+                                    @can('edit measurement-units')
                                     <a href="{{ route('measurement-units.edit', $unit) }}"
                                        class="inline-flex items-center gap-1 font-medium text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 text-sm ml-3">
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
@@ -74,6 +77,8 @@
                                         </svg>
                                         {{ __('Editar') }}
                                     </a>
+                                    @endcan
+                                    @can('delete measurement-units')
                                     <form action="{{ route('measurement-units.destroy', $unit) }}" method="POST" class="inline">
                                         @csrf
                                         @method('DELETE')
@@ -86,6 +91,7 @@
                                             {{ __('Eliminar') }}
                                         </button>
                                     </form>
+                                    @endcan
                                 </td>
                             </tr>
                         @empty

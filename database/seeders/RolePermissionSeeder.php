@@ -32,7 +32,8 @@ class RolePermissionSeeder extends Seeder
             'warehouses', 'locations', 'partners', 'projects', 'project-prefixes',
             'packing-specifications', 'transaction-types', 'containers',
             'reception', 'stock-movements', 'inventory-balances', 'material-outputs',
-            'stock-limits', 'roles', 'permissions', 'users',
+            'stock-limits', 'currencies', 'item-costs', 'inventory-adjustments',
+            'unit-plans', 'roles', 'permissions', 'users',
         ];
 
         $actions = ['create', 'view', 'edit', 'delete'];
@@ -44,6 +45,16 @@ class RolePermissionSeeder extends Seeder
                     ['label' => ucfirst($action) . ' ' . str_replace('-', ' ', $module)]
                 );
             }
+        }
+
+        // Special permissions that don't follow the CRUD pattern
+        $specialPermissions = [
+            'approve inventory-adjustments' => 'Approve inventory adjustments',
+            'refresh currencies'            => 'Refresh currency rates',
+        ];
+
+        foreach ($specialPermissions as $name => $label) {
+            Permission::firstOrCreate(['name' => $name], ['label' => $label]);
         }
 
         // Assign ALL permissions to Administrator
