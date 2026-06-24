@@ -70,9 +70,14 @@ class UnitPlansImport implements ToCollection, WithHeadingRow
                 ($buffer[$customsDate][$containerCode][$partNo] ?? 0) + $qty;
         }
 
-        // Resolver items y costos
+        // Resolver items y costos.
+        // OJO: array_keys() devuelve int para claves numéricas (PHP convierte
+        // automáticamente '73026060' → 73026060). Forzamos string para que el
+        // whereIn enlace parámetros nvarchar; de lo contrario SQL Server intenta
+        // convertir la columna `code` a int y falla con códigos alfanuméricos.
         $allCodes = collect($buffer)
             ->flatMap(fn($byContainer) => collect($byContainer)->flatMap(fn($byItem) => array_keys($byItem)))
+            ->map(fn($code) => (string) $code)
             ->unique()
             ->values();
 
@@ -97,6 +102,7 @@ class UnitPlansImport implements ToCollection, WithHeadingRow
                 $linesOut       = [];
 
                 foreach ($byItem as $itemCode => $qty) {
+                    $itemCode = (string) $itemCode; // claves numéricas llegan como int
                     $item = $items->get($itemCode);
 
                     // Filtrar items no registrados en catálogo

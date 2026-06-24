@@ -258,8 +258,13 @@ class UnitPlanBoard extends Component
         $dayLabels = collect($this->days)->pluck('label', 'value');
 
         try {
+            // Las claves numéricas de array llegan como int (PHP coacciona
+            // '73026060' → 73026060). Forzamos string para que whereIn enlace
+            // parámetros nvarchar; si no, SQL Server convierte la columna `code`
+            // a int y falla con códigos alfanuméricos.
             $allItemCodes = collect($assignments)->keys()
                 ->flatMap(fn($code) => array_keys($itemsByContainer[$code] ?? []))
+                ->map(fn($code) => (string) $code)
                 ->unique();
 
             // SQL Server limita a 2100 parámetros por consulta: troceamos.
@@ -278,6 +283,7 @@ class UnitPlanBoard extends Component
                 $weekStart, $dayLabels, &$exportRows, &$savedCount
             ) {
                 foreach ($assignments as $code => $pos) {
+                    $code = (string) $code; // claves numéricas llegan como int
                     $day  = (int) $pos['day'];
                     $slot = (int) $pos['slot'];
 
@@ -320,6 +326,7 @@ class UnitPlanBoard extends Component
                     $lineNumber = (int) $document->shipmentDocumentLines()->max('line_number');
 
                     foreach (($itemsByContainer[$code] ?? []) as $itemCode => $quantity) {
+                        $itemCode = (string) $itemCode; // claves numéricas llegan como int
                         $model    = $items->get($itemCode);
                         $unitCost = $model?->lastCost?->total_cost ?? 0;
 
