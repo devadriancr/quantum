@@ -76,9 +76,13 @@ class UnitPlansImport implements ToCollection, WithHeadingRow
             ->unique()
             ->values();
 
-        $items = Item::whereIn('code', $allCodes)
-            ->with(['lastCost.currency'])
-            ->get()
+        // SQL Server limita a 2100 parámetros por consulta. Troceamos el
+        // whereIn para soportar planes con miles de códigos distintos.
+        $items = $allCodes
+            ->chunk(2000)
+            ->flatMap(fn($chunk) => Item::whereIn('code', $chunk->values())
+                ->with(['lastCost.currency'])
+                ->get())
             ->keyBy('code');
 
         ksort($buffer);

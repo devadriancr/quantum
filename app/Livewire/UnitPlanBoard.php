@@ -128,10 +128,19 @@ class UnitPlanBoard extends Component
         $stockByCode  = [];
         $limitsByCode = [];
         if (!empty($itemIdByCode)) {
-            $stocks = InventoryBalance::whereIn('item_id', array_values($itemIdByCode))
-                ->select('item_id', DB::raw('SUM(current_quantity) as total'))
-                ->groupBy('item_id')
-                ->pluck('total', 'item_id');
+            // SQL Server limita a 2100 parámetros por consulta: troceamos los ids.
+            $itemIds = array_values($itemIdByCode);
+
+            // union (no flatMap): las claves son item_id enteras y collapse
+            // las reindexaría, rompiendo la asociación id => total.
+            $stocks = collect($itemIds)
+                ->chunk(2000)
+                ->reduce(fn($carry, $chunk) => $carry->union(
+                    InventoryBalance::whereIn('item_id', $chunk->values())
+                        ->select('item_id', DB::raw('SUM(current_quantity) as total'))
+                        ->groupBy('item_id')
+                        ->pluck('total', 'item_id')
+                ), collect());
             foreach ($itemIdByCode as $code => $id) {
                 $stockByCode[$code] = (float) ($stocks[$id] ?? 0);
             }
@@ -139,16 +148,18 @@ class UnitPlanBoard extends Component
             // Límites de stock por item (mín, máx, consumo diario promedio).
             // Se agregan por item_id porque el inventario también se suma
             // entre ubicaciones. El consumo diario se redondea hacia arriba.
-            $limits = \App\Models\StockLimit::where('active', true)
-                ->whereIn('item_id', array_values($itemIdByCode))
-                ->select(
-                    'item_id',
-                    DB::raw('SUM(minimum_quantity) as min_qty'),
-                    DB::raw('SUM(maximum_quantity) as max_qty'),
-                    DB::raw('SUM(daily_average) as daily_avg'),
-                )
-                ->groupBy('item_id')
-                ->get()
+            $limits = collect($itemIds)
+                ->chunk(2000)
+                ->flatMap(fn($chunk) => \App\Models\StockLimit::where('active', true)
+                    ->whereIn('item_id', $chunk->values())
+                    ->select(
+                        'item_id',
+                        DB::raw('SUM(minimum_quantity) as min_qty'),
+                        DB::raw('SUM(maximum_quantity) as max_qty'),
+                        DB::raw('SUM(daily_average) as daily_avg'),
+                    )
+                    ->groupBy('item_id')
+                    ->get())
                 ->keyBy('item_id');
 
             foreach ($itemIdByCode as $code => $id) {
@@ -251,9 +262,12 @@ class UnitPlanBoard extends Component
                 ->flatMap(fn($code) => array_keys($itemsByContainer[$code] ?? []))
                 ->unique();
 
-            $items = Item::whereIn('code', $allItemCodes)
-                ->with(['lastCost.currency'])
-                ->get()
+            // SQL Server limita a 2100 parámetros por consulta: troceamos.
+            $items = $allItemCodes
+                ->chunk(2000)
+                ->flatMap(fn($chunk) => Item::whereIn('code', $chunk->values())
+                    ->with(['lastCost.currency'])
+                    ->get())
                 ->keyBy('code');
 
             $exportRows  = [];
