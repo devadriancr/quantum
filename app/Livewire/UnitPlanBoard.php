@@ -2,11 +2,12 @@
 
 namespace App\Livewire;
 
+use App\Exports\UnitPlanExport;
 use App\Imports\UnitPlansImport;
+use App\Models\Container;
 use App\Models\InventoryBalance;
 use App\Models\Item;
-use App\Models\UnitPlan;
-use App\Models\UnitPlanLine;
+use App\Models\ShipmentDocument;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
@@ -202,7 +203,7 @@ class UnitPlanBoard extends Component
        obtener items detallados y persiste el plan.
        ────────────────────────────────────────────────────────────────── */
 
-    public function savePlan(array $assignments, array $slotTimes, string $planName = ''): void
+    public function savePlan(array $assignments, array $slotTimes, string $planName = '')
     {
         $times = array_filter($slotTimes);
         if (count($times) !== count(array_unique($times))) {
@@ -217,6 +218,19 @@ class UnitPlanBoard extends Component
             return;
         }
 
+        // Cada contenedor se registra con el horario de su fila: toda fila que
+        // tenga al menos un contenedor asignado DEBE tener una hora definida.
+        $missingTimeSlots = collect($assignments)
+            ->pluck('slot')
+            ->unique()
+            ->filter(fn($slot) => empty($slotTimes[$slot] ?? null));
+
+        if ($missingTimeSlots->isNotEmpty()) {
+            $this->dispatch('toast', type: 'error', title: 'Horario faltante',
+                body: 'Cada fila con contenedores debe tener una hora asignada.');
+            return;
+        }
+
         $cached = $this->cacheKey ? Cache::get($this->cacheKey) : null;
         if (!$cached) {
             $this->dispatch('toast', type: 'error', title: 'Sesión expirada',
@@ -226,6 +240,11 @@ class UnitPlanBoard extends Component
 
         $itemsByContainer = $cached['items_by_container'];
         $dateByCode       = $cached['date_by_code'];
+
+        // Fechas del tablero = días (Lunes-Sábado) de la SEMANA SIGUIENTE.
+        // Esa fecha es la que se registra como llegada estimada del contenedor.
+        $weekStart = now()->addWeek()->startOfWeek();           // lunes de la próxima semana
+        $dayLabels = collect($this->days)->pluck('label', 'value');
 
         try {
             $allItemCodes = collect($assignments)->keys()
@@ -237,49 +256,97 @@ class UnitPlanBoard extends Component
                 ->get()
                 ->keyBy('code');
 
-            $plan = DB::transaction(function () use ($items, $itemsByContainer, $dateByCode, $assignments, $slotTimes, $planName) {
-                $plan = UnitPlan::create([
-                    'name'            => $planName !== '' ? $planName : 'Planeación ' . now()->format('Y-m-d H:i'),
-                    'week_start_date' => now()->startOfWeek()->toDateString(),
-                    'total_cost'      => 0,
-                ]);
+            $exportRows  = [];
+            $savedCount  = 0;
 
-                $planTotal = 0;
-
+            DB::transaction(function () use (
+                $items, $itemsByContainer, $dateByCode, $assignments, $slotTimes,
+                $weekStart, $dayLabels, &$exportRows, &$savedCount
+            ) {
                 foreach ($assignments as $code => $pos) {
-                    $containerItems = $itemsByContainer[$code] ?? [];
-                    $time           = $slotTimes[$pos['slot']] ?? null;
-                    $customsDate    = $dateByCode[$code] ?? null;
+                    $day  = (int) $pos['day'];
+                    $slot = (int) $pos['slot'];
 
-                    foreach ($containerItems as $itemCode => $quantity) {
-                        $model     = $items->get($itemCode);
-                        $unitCost  = $model?->lastCost?->total_cost ?? 0;
-                        $lineTotal = round(((float) $quantity) * (float) $unitCost, 4);
-                        $planTotal += $lineTotal;
+                    $arrivalDate = $weekStart->copy()->addDays($day - 1)->toDateString();
+                    $arrivalTime = \Carbon\Carbon::parse($slotTimes[$slot])->format('H:i:s');
+                    $customsDate = $dateByCode[$code] ?? null;
 
-                        UnitPlanLine::create([
-                            'unit_plan_id'   => $plan->id,
-                            'container_code' => $code,
-                            'customs_date'   => $customsDate,
-                            'item_id'        => $model?->id,
-                            'item_code'      => $itemCode,
-                            'quantity'       => $quantity,
-                            'day_of_week'    => (int) $pos['day'],
-                            'slot_index'     => (int) $pos['slot'],
-                            'schedule_time'  => $time,
-                            'unit_cost'      => $unitCost,
-                            'line_total'     => $lineTotal,
-                            'currency_id'    => $model?->lastCost?->currency_id,
+                    // Reutilizar el contenedor si ya existe con mismo código,
+                    // fecha y hora de llegada; si no, crearlo.
+                    $container = Container::where('code', $code)
+                        ->where('estimated_arrival_date', $arrivalDate)
+                        ->where('estimated_arrival_time', $arrivalTime)
+                        ->first();
+
+                    if (!$container) {
+                        $container = Container::create([
+                            'code'                   => $code,
+                            'partner_id'             => null,
+                            'container_type'         => 'CONTAINER',
+                            'estimated_arrival_date' => $arrivalDate,
+                            'estimated_arrival_time' => $arrivalTime,
+                            'status'                 => 'PENDING',
                         ]);
                     }
-                }
 
-                $plan->update(['total_cost' => $planTotal]);
-                return $plan;
+                    // Documento del contenedor (uno por contenedor).
+                    $document = ShipmentDocument::firstOrCreate(
+                        ['container_id' => $container->id],
+                        [
+                            'document_number'        => $code,
+                            'partner_id'             => null,
+                            'document_date'          => $arrivalDate,
+                            'document_time'          => $arrivalTime,
+                            'estimated_arrival_date' => $arrivalDate,
+                            'estimated_arrival_time' => $arrivalTime,
+                            'document_status'        => 'PENDING',
+                        ]
+                    );
+
+                    $lineNumber = (int) $document->shipmentDocumentLines()->max('line_number');
+
+                    foreach (($itemsByContainer[$code] ?? []) as $itemCode => $quantity) {
+                        $model    = $items->get($itemCode);
+                        $unitCost = $model?->lastCost?->total_cost ?? 0;
+
+                        $lineNumber++;
+                        $document->shipmentDocumentLines()->create([
+                            'line_number'       => $lineNumber,
+                            'item_id'           => $model?->id,
+                            'serial_number'     => null,
+                            'quantity_declared' => $quantity,
+                            'unit_cost'         => $unitCost,
+                            'status'            => 'PENDING',
+                        ]);
+
+                        $exportRows[] = [
+                            $dayLabels[$day] ?? $day,
+                            \Carbon\Carbon::parse($arrivalDate)->format('d/m/Y'),
+                            substr($arrivalTime, 0, 5),
+                            $customsDate ? \Carbon\Carbon::parse($customsDate)->format('d/m/Y') : '—',
+                            $code,
+                            $itemCode,
+                            (float) $quantity,
+                            (float) $unitCost,
+                            round(((float) $quantity) * (float) $unitCost, 4),
+                            $model?->lastCost?->currency?->code ?? '—',
+                        ];
+                    }
+
+                    $savedCount++;
+                }
             });
 
             $this->dispatch('toast', type: 'success', title: '¡Planeación guardada!',
-                body: "Plan #{$plan->id} guardado correctamente.");
+                body: "{$savedCount} contenedor(es) registrado(s) correctamente.");
+
+            // Avisar al cliente que el guardado fue exitoso para recargar la
+            // página (nueva planeación) una vez disparada la descarga del Excel.
+            $this->dispatch('plan-saved');
+
+            $fileName = 'planeacion-' . now()->format('Ymd-His') . '.xlsx';
+
+            return Excel::download(new UnitPlanExport($exportRows), $fileName);
         } catch (\Throwable $e) {
             $this->dispatch('toast', type: 'error', title: 'Error al guardar', body: $e->getMessage());
         }
@@ -287,6 +354,13 @@ class UnitPlanBoard extends Component
 
     public function render()
     {
-        return view('livewire.unit-plan-board');
+        // Fechas de la semana siguiente para cada día (Lunes-Sábado). Estas son
+        // las que se registran como llegada estimada al guardar.
+        $weekStart = now()->addWeek()->startOfWeek();
+        $dayDates  = collect($this->days)->mapWithKeys(fn($d) => [
+            $d['value'] => $weekStart->copy()->addDays($d['value'] - 1)->format('d/m/Y'),
+        ]);
+
+        return view('livewire.unit-plan-board', ['dayDates' => $dayDates]);
     }
 }

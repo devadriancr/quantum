@@ -1,15 +1,11 @@
-<div x-data="unitPlanBoard" class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
+<div x-data="unitPlanBoard" class="px-4 sm:px-6 lg:px-8 py-4 w-full max-w-9xl mx-auto">
 
     {{-- ─────────────────── Header ─────────────────── --}}
-    <div class="sm:flex sm:justify-between sm:items-center mb-8">
+    <div class="sm:flex sm:justify-between sm:items-center mb-4">
         <div class="mb-4 sm:mb-0">
             <h1 class="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">
                 {{ __('Planeación de Unidades') }}
             </h1>
-            <p class="text-xs text-gray-500 mt-1" x-show="excelData">
-                <span x-text="totalContainersInPool.toLocaleString('en-US')"></span>
-                {{ __('contenedor(es) cargado(s)') }}
-            </p>
         </div>
 
         <div class="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
@@ -185,7 +181,10 @@
                 <tr>
                     <th class="px-3 py-3 text-center text-[10px]">{{ __('Hora') }}</th>
                     <template x-for="day in days" :key="day.value">
-                        <th class="px-3 py-3 text-center border-l border-gray-100 dark:border-gray-700/60" x-text="day.label"></th>
+                        <th class="px-3 py-3 text-center border-l border-gray-100 dark:border-gray-700/60">
+                            <div x-text="day.label"></div>
+                            <div class="text-[10px] font-normal normal-case text-gray-400 mt-0.5" x-text="dayDates[day.value]"></div>
+                        </th>
                     </template>
                 </tr>
             </thead>
@@ -202,12 +201,20 @@
                         </td>
                         <template x-for="day in days" :key="day.value + '-' + slotIdx">
                             <td class="border-l border-gray-100 dark:border-gray-700/60 align-top p-2">
-                                <div class="kanban-slot min-h-16 rounded-md border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/30 p-1 flex items-center justify-center"
+                                <div class="kanban-slot min-h-12 rounded-md border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/30 p-1 flex items-center justify-center"
                                      :data-day="day.value"
                                      :data-slot="slotIdx">
                                     <template x-if="getCell(day.value, slotIdx)">
                                         <div class="kanban-card relative w-full bg-violet-100 dark:bg-violet-900/40 border border-violet-400 text-violet-800 dark:text-violet-200 rounded px-2 py-2 text-center cursor-move shadow-sm"
                                              :data-container-code="getCell(day.value, slotIdx).code">
+                                            <button type="button"
+                                                    class="no-drag absolute top-1 left-1 p-0.5 rounded text-red-500 hover:text-red-700 hover:bg-red-100 dark:text-red-300 dark:hover:bg-red-900/50"
+                                                    title="{{ __('Quitar contenedor') }}"
+                                                    @click.stop="unassignContainer(getCell(day.value, slotIdx).code)">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-3.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
                                             <button type="button"
                                                     class="no-drag absolute top-1 right-1 p-0.5 rounded text-violet-500 hover:text-violet-800 hover:bg-violet-200/70 dark:text-violet-300 dark:hover:bg-violet-700/60"
                                                     title="{{ __('Ver números de parte') }}"
@@ -217,7 +224,7 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                                                 </svg>
                                             </button>
-                                            <p class="font-bold text-xs truncate pr-4" x-text="getCell(day.value, slotIdx).code"></p>
+                                            <p class="font-bold text-xs truncate px-4" x-text="getCell(day.value, slotIdx).code"></p>
                                             <p class="font-bold text-xs opacity-75 mt-0.5" x-text="formatMoney(getCell(day.value, slotIdx).price)"></p>
                                         </div>
                                     </template>
@@ -240,7 +247,7 @@
     </div>
 
     {{-- ─────────────────── Inventario + Pool ─────────────────── --}}
-    <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {{-- Proyección de Inventario (siempre visible con headers + empty state) --}}
         <div>
@@ -283,13 +290,16 @@
                 </div>
             </div>
 
-            <div x-show="projection.length > 0" class="bg-white dark:bg-gray-800 shadow-xs rounded-xl border border-gray-200 dark:border-gray-700/60 overflow-auto max-h-[500px]">
+            <div x-show="projection.length > 0" class="bg-white dark:bg-gray-800 shadow-xs rounded-xl border border-gray-200 dark:border-gray-700/60 overflow-auto max-h-[420px]">
                 <table class="w-full table-fixed dark:text-gray-300">
                     <thead class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-b border-gray-100 dark:border-gray-700/60 sticky top-0 z-10">
                         <tr>
                             <th class="px-3 py-3 text-center text-[10px]">{{ __('N° Parte') }}</th>
                             <template x-for="day in days" :key="'ph-' + day.value">
-                                <th class="px-3 py-3 text-center border-l border-gray-100 dark:border-gray-700/60" x-text="day.label"></th>
+                                <th class="px-3 py-3 text-center border-l border-gray-100 dark:border-gray-700/60">
+                                    <div x-text="day.label"></div>
+                                    <div class="text-[10px] font-normal normal-case text-gray-400 mt-0.5" x-text="dayDates[day.value]"></div>
+                                </th>
                             </template>
                         </tr>
                     </thead>
@@ -396,7 +406,7 @@
             </div>
 
             {{-- Pool con datos --}}
-            <div x-show="excelData" class="space-y-4 overflow-y-auto max-h-[500px] pr-2">
+            <div x-show="excelData" class="space-y-4 overflow-y-auto max-h-[420px] pr-2">
                 <template x-for="(bucket, date) in poolByDate" :key="'g-' + date">
                     <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl border border-gray-200 dark:border-gray-700/60 p-4">
                         <div class="flex items-center justify-between mb-3">
@@ -469,6 +479,7 @@
         slotTimes: { 1: '', 2: '', 3: '', 4: '' },
         planName: '',
         days: @js(collect($days)->values()),
+        dayDates: @js($dayDates),
         toasts: [],
         toastSeq: 0,
 
@@ -497,6 +508,13 @@
                     details:  data.details  || [],
                     duration: data.type === 'error' || data.type === 'warning' ? 8000 : 5000,
                 });
+            });
+
+            // Tras guardar con éxito: dejar que la descarga del Excel arranque y
+            // el toast de éxito sea visible un momento, luego recargar la página
+            // para iniciar una nueva planeación desde cero.
+            this.$wire.on('plan-saved', () => {
+                setTimeout(() => window.location.reload(), 1500);
             });
 
             this.$watch('assignments', () => {
@@ -821,6 +839,15 @@
             if (Object.keys(this.assignments).length === 0) {
                 this.showToast({ type: 'error', title: 'Sin contenedores', body: 'Asigna al menos un contenedor.' });
                 return;
+            }
+            // Cada fila con contenedores debe tener una hora: con ese horario se
+            // registra el contenedor.
+            const usedSlots = new Set(Object.values(this.assignments).map(p => p.slot));
+            for (const slot of usedSlots) {
+                if (!this.slotTimes[slot]) {
+                    this.showToast({ type: 'error', title: 'Horario faltante', body: 'Cada fila con contenedores debe tener una hora asignada.' });
+                    return;
+                }
             }
             await this.$wire.savePlan(this.assignments, this.slotTimes, this.planName);
         },
