@@ -14,14 +14,14 @@ class UnitPlansImport implements ToCollection, WithHeadingRow
     public int   $rows                = 0;
     public int   $skipped             = 0;
     public int   $itemsSkipped        = 0; // items no encontrados en catálogo
-    public int   $containersSkipped   = 0; // contenedores con 0 items válidos
+    public int   $containersSkipped   = 0; // contenedores descartados por tener al menos un item ajeno al catálogo
 
     /**
      * Estructura resultante:
      *  groups: [
      *    [
      *      'date'       => 'YYYY-MM-DD',
-     *      'date_label' => 'DD/MM/YYYY',
+     *      'date_label' => 'DD-MM-YYYY',
      *      'containers' => [
      *        [
      *          'code'        => 'ONEU0764828',
@@ -70,6 +70,11 @@ class UnitPlansImport implements ToCollection, WithHeadingRow
                 ($buffer[$customsDate][$containerCode][$partNo] ?? 0) + $qty;
         }
 
+        // Ventana de fechas a procesar: hasta 15 días a partir de hoy, sin
+        // límite hacia el pasado (se incluyen todas las fechas vencidas).
+        $maxDate = Carbon::today()->addDays(15)->format('Y-m-d');
+        $buffer  = array_filter($buffer, fn($date) => $date <= $maxDate, ARRAY_FILTER_USE_KEY);
+
         // Resolver items y costos.
         // OJO: array_keys() devuelve int para claves numéricas (PHP convierte
         // automáticamente '73026060' → 73026060). Forzamos string para que el
@@ -90,6 +95,8 @@ class UnitPlansImport implements ToCollection, WithHeadingRow
                 ->get())
             ->keyBy('code');
 
+        // Orden ascendente: de la fecha más vieja hacia la más próxima
+        // (tope hoy+15).
         ksort($buffer);
 
         foreach ($buffer as $date => $byContainer) {
@@ -98,18 +105,30 @@ class UnitPlansImport implements ToCollection, WithHeadingRow
             $containers = [];
 
             foreach ($byContainer as $containerCode => $byItem) {
+                // El proveedor manda en el mismo Excel números de parte de
+                // otros clientes. Si el contenedor tiene al menos un item que
+                // no pertenece a nuestro catálogo, se descarta por completo
+                // (no solo esa línea) para no mezclar contenedores ajenos.
+                $missingCodes = [];
+                foreach ($byItem as $itemCode => $qty) {
+                    if (!$items->has((string) $itemCode)) {
+                        $missingCodes[] = (string) $itemCode;
+                    }
+                }
+
+                if (!empty($missingCodes)) {
+                    $this->containersSkipped++;
+                    $this->itemsSkipped += count($missingCodes);
+                    $this->errors[] = "Contenedor '{$containerCode}' descartado: contiene item(s) ajeno(s) al catálogo (" . implode(', ', $missingCodes) . ").";
+                    continue;
+                }
+
                 $containerTotal = 0.0;
                 $linesOut       = [];
 
                 foreach ($byItem as $itemCode => $qty) {
                     $itemCode = (string) $itemCode; // claves numéricas llegan como int
-                    $item = $items->get($itemCode);
-
-                    // Filtrar items no registrados en catálogo
-                    if (!$item) {
-                        $this->itemsSkipped++;
-                        continue;
-                    }
+                    $item     = $items->get($itemCode);
 
                     $unitCost = $item->lastCost ? (float) $item->lastCost->total_cost : 0.0;
                     $currency = $item->lastCost?->currency?->code;
@@ -131,12 +150,6 @@ class UnitPlansImport implements ToCollection, WithHeadingRow
                     }
                 }
 
-                // Si el contenedor quedó sin items válidos, descartarlo
-                if (empty($linesOut)) {
-                    $this->containersSkipped++;
-                    continue;
-                }
-
                 $containers[] = [
                     'code'       => $containerCode,
                     'items'      => $linesOut,
@@ -151,7 +164,7 @@ class UnitPlansImport implements ToCollection, WithHeadingRow
 
             $this->groups[] = [
                 'date'       => $date,
-                'date_label' => Carbon::parse($date)->format('d/m/Y'),
+                'date_label' => Carbon::parse($date)->format('d-m-Y'),
                 'containers' => $containers,
             ];
         }

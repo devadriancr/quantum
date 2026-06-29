@@ -12,10 +12,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        $schedule->command('sync:catalogs')
-            ->dailyAt('01:00')
-            ->withoutOverlapping()
-            ->appendOutputTo(storage_path('logs/sync-catalogs.log'));
+        //
     }
 
     /**

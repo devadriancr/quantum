@@ -219,7 +219,7 @@ class UnitPlanBoard extends Component
         $times = array_filter($slotTimes);
         if (count($times) !== count(array_unique($times))) {
             $this->dispatch('toast', type: 'error', title: 'Horarios repetidos',
-                body: 'Las 4 horas deben ser distintas.');
+                body: 'Los horarios deben ser distintos.');
             return;
         }
 

@@ -186,10 +186,11 @@
                             <div class="text-[10px] font-normal normal-case text-gray-400 mt-0.5" x-text="dayDates[day.value]"></div>
                         </th>
                     </template>
+                    <th class="w-14 border-l border-gray-100 dark:border-gray-700/60"></th>
                 </tr>
             </thead>
             <tbody class="text-sm">
-                <template x-for="slotIdx in [1,2,3,4]" :key="slotIdx">
+                <template x-for="(slotIdx, idx) in slots" :key="slotIdx">
                     <tr class="border-b border-gray-100 dark:border-gray-700/60">
                         <td class="px-2 py-2 align-middle">
                             <input
@@ -231,6 +232,24 @@
                                 </div>
                             </td>
                         </template>
+                        <td class="border-l border-gray-100 dark:border-gray-700/60 align-middle p-1">
+                            <div x-show="idx === slots.length - 1" class="flex items-center justify-center gap-1">
+                                <button type="button" @click="addSlot()"
+                                        title="{{ __('Agregar línea') }}"
+                                        class="p-1 rounded text-violet-600 hover:text-violet-800 hover:bg-violet-100 dark:text-violet-300 dark:hover:bg-violet-900/40">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                    </svg>
+                                </button>
+                                <button type="button" x-show="slots.length > 4" @click="removeSlot(slotIdx)"
+                                        title="{{ __('Eliminar línea') }}"
+                                        class="p-1 rounded text-red-500 hover:text-red-700 hover:bg-red-100 dark:text-red-300 dark:hover:bg-red-900/40">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
                     </tr>
                 </template>
 
@@ -241,6 +260,7 @@
                         <td class="px-2 py-3 text-center border-l border-gray-100 dark:border-gray-700/60 font-bold text-green-700 dark:text-green-400 text-sm"
                             x-text="formatMoney(getDayTotal(day.value))"></td>
                     </template>
+                    <td class="border-l border-gray-100 dark:border-gray-700/60"></td>
                 </tr>
             </tbody>
         </table>
@@ -255,13 +275,13 @@
                 <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">
                     {{ __('Proyección de Inventario') }}
                 </h2>
-                <span class="text-xs text-gray-500" x-show="projection.length > 0">
-                    <span x-text="filteredProjection.length"></span> / <span x-text="projection.length"></span> {{ __('item(s)') }}
+                <span class="text-xs text-gray-500" x-show="itemsProjectionBase.length > 0">
+                    <span x-text="filteredProjectionBase.length"></span> / <span x-text="itemsProjectionBase.length"></span> {{ __('item(s)') }}
                 </span>
             </div>
 
             {{-- Buscador por número de parte --}}
-            <div class="relative mb-3" x-show="projection.length > 0">
+            <div class="relative mb-3" x-show="itemsProjectionBase.length > 0">
                 <input
                     type="search"
                     x-model="projectionSearch"
@@ -279,7 +299,7 @@
                 </button>
             </div>
 
-            <div x-show="projection.length === 0"
+            <div x-show="itemsProjectionBase.length === 0"
                  class="bg-white dark:bg-gray-800 shadow-xs rounded-xl border border-dashed border-gray-300 dark:border-gray-700/60 p-12 text-center">
                 <div class="flex flex-col items-center gap-3 text-gray-400 dark:text-gray-500">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-12 opacity-50">
@@ -290,11 +310,14 @@
                 </div>
             </div>
 
-            <div x-show="projection.length > 0" class="bg-white dark:bg-gray-800 shadow-xs rounded-xl border border-gray-200 dark:border-gray-700/60 overflow-auto max-h-[420px]">
+            {{-- Cada columna (día) tiene su propio ranking ascendente: el item
+                 más crítico (más negativo / menor stock) de ESE día queda
+                 arriba, sin importar en qué posición esté en los otros días. --}}
+            <div x-show="itemsProjectionBase.length > 0" class="bg-white dark:bg-gray-800 shadow-xs rounded-xl border border-gray-200 dark:border-gray-700/60 overflow-auto max-h-[420px]">
                 <table class="w-full table-fixed dark:text-gray-300">
                     <thead class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-b border-gray-100 dark:border-gray-700/60 sticky top-0 z-10">
                         <tr>
-                            <th class="px-3 py-3 text-center text-[10px]">{{ __('N° Parte') }}</th>
+                            <th class="w-8 px-2 py-3 text-center text-[10px]">{{ __('#') }}</th>
                             <template x-for="day in days" :key="'ph-' + day.value">
                                 <th class="px-3 py-3 text-center border-l border-gray-100 dark:border-gray-700/60">
                                     <div x-text="day.label"></div>
@@ -305,7 +328,7 @@
                     </thead>
                     <tbody class="text-sm">
                         {{-- Sin coincidencias en búsqueda --}}
-                        <template x-if="projection.length > 0 && filteredProjection.length === 0">
+                        <template x-if="itemsProjectionBase.length > 0 && projectionRows.length === 0">
                             <tr>
                                 <td :colspan="days.length + 1" class="px-3 py-8 text-center text-sm text-gray-500 italic">
                                     {{ __('No se encontraron items con ese número de parte.') }}
@@ -313,19 +336,17 @@
                             </tr>
                         </template>
 
-                        {{-- Filas con datos --}}
-                        <template x-for="row in filteredProjection" :key="row.code">
+                        {{-- Filas con datos: cada fila es una posición de ranking,
+                             no un item fijo. --}}
+                        <template x-for="(row, rowIdx) in projectionRows" :key="'prow-' + rowIdx">
                             <tr class="border-b border-gray-100 dark:border-gray-700/60 hover:bg-gray-50/60 dark:hover:bg-gray-900/20">
-                                <td class="px-2 py-2 text-center align-middle">
-                                    <div class="font-mono text-xs font-semibold text-gray-700 dark:text-gray-200" x-text="row.code"></div>
-                                    <div class="text-[10px] text-gray-400">
-                                        {{ __('inicial:') }} <span x-text="formatInt(row.start)"></span>
-                                    </div>
-                                </td>
-                                <template x-for="(value, i) in row.byDay" :key="'pd-' + row.code + '-' + i">
-                                    <td class="px-3 py-3 text-right border-l border-gray-100 dark:border-gray-700/60 text-sm tabular-nums"
-                                        :class="cellStockClass(value, row.min, row.max)"
-                                        x-text="formatInt(value)"></td>
+                                <td class="px-1 py-2 text-center align-middle text-[10px] font-semibold text-gray-400" x-text="rowIdx + 1"></td>
+                                <template x-for="(cell, dIdx) in row" :key="'pd-' + rowIdx + '-' + dIdx">
+                                    <td class="px-2 py-2 text-center border-l border-gray-100 dark:border-gray-700/60"
+                                        :class="cellStockClass(cell.value, cell.min, cell.max)">
+                                        <div class="font-mono text-[10px] font-semibold truncate" x-text="cell.code"></div>
+                                        <div class="text-sm tabular-nums" x-text="formatInt(cell.value)"></div>
+                                    </td>
                                 </template>
                             </tr>
                         </template>
@@ -409,11 +430,9 @@
             <div x-show="excelData" class="space-y-4 overflow-y-auto max-h-[420px] pr-2">
                 <template x-for="(bucket, date) in poolByDate" :key="'g-' + date">
                     <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl border border-gray-200 dark:border-gray-700/60 p-4">
-                        <div class="flex items-center justify-between mb-3">
-                            <h3 class="font-semibold text-gray-700 dark:text-gray-200 text-sm">
-                                {{ __('Fecha:') }} <span x-text="bucket.label"></span>
-                            </h3>
-                            <span class="text-xs text-gray-500">
+                        <div class="relative flex items-center justify-center mb-3">
+                            <h3 class="font-semibold text-gray-700 dark:text-gray-200 text-sm text-center" x-text="bucket.label"></h3>
+                            <span class="absolute right-0 text-xs text-gray-500">
                                 <span x-text="bucket.count"></span> {{ __('disponibles') }}
                             </span>
                         </div>
@@ -476,7 +495,8 @@
         // ─── State ───
         excelData: null,
         assignments: {},
-        slotTimes: { 1: '', 2: '', 3: '', 4: '' },
+        slots: [1, 2, 3, 4],
+        slotTimes: { 1: '02:00', 2: '08:30', 3: '14:30', 4: '21:00' },
         planName: '',
         days: @js(collect($days)->values()),
         dayDates: @js($dayDates),
@@ -518,6 +538,10 @@
             });
 
             this.$watch('assignments', () => {
+                this.$nextTick(() => this.initSortables());
+            });
+
+            this.$watch('slots', () => {
                 this.$nextTick(() => this.initSortables());
             });
 
@@ -606,13 +630,9 @@
             return count;
         },
 
-        get filteredProjection() {
-            const term = this.projectionSearch.trim().toLowerCase();
-            if (!term) return this.projection;
-            return this.projection.filter(row => row.code.toLowerCase().includes(term));
-        },
-
-        get projection() {
+        // Datos base por item, sin ordenar: {code, start, byDay (6 valores
+        // acumulados), min, max}.
+        get itemsProjectionBase() {
             if (!this.excelData || Object.keys(this.assignments).length === 0) return [];
 
             const itemsByContainer = this.excelData.items_by_container;
@@ -643,8 +663,39 @@
                 }
                 rows.push({ code, start, byDay: cumulative, min: limits.min, max: limits.max });
             }
-            // De menor a mayor según el inventario actual del item.
-            rows.sort((a, b) => a.start - b.start);
+            return rows;
+        },
+
+        get filteredProjectionBase() {
+            const term = this.projectionSearch.trim().toLowerCase();
+            if (!term) return this.itemsProjectionBase;
+            return this.itemsProjectionBase.filter(row => row.code.toLowerCase().includes(term));
+        },
+
+        // Matriz fila x día para la tabla: cada columna (día) se ordena de
+        // forma independiente, de menor a mayor (lo más negativo/crítico
+        // primero). El item que cae en una posición puede variar de un día a
+        // otro, por eso cada celda lleva su propio código de item.
+        get projectionRows() {
+            const base = this.filteredProjectionBase;
+            if (base.length === 0) return [];
+
+            const columns = [];
+            for (let d = 0; d < 6; d++) {
+                const list = base.map(row => ({
+                    code:  row.code,
+                    value: row.byDay[d],
+                    min:   row.min,
+                    max:   row.max,
+                }));
+                list.sort((a, b) => a.value - b.value);
+                columns.push(list);
+            }
+
+            const rows = [];
+            for (let i = 0; i < base.length; i++) {
+                rows.push(columns.map(col => col[i]));
+            }
             return rows;
         },
 
@@ -694,13 +745,32 @@
         hasSlotTimeConflict(slot) {
             const t = this.slotTimes[slot];
             if (!t) return false;
-            for (const s of [1, 2, 3, 4]) {
+            for (const s of this.slots) {
                 if (s !== slot && this.slotTimes[s] === t) return true;
             }
             return false;
         },
 
         // ─── Mutaciones ───
+        addSlot() {
+            const next = this.slots.length ? Math.max(...this.slots) + 1 : 1;
+            this.slots.push(next);
+            this.slotTimes[next] = '';
+        },
+
+        // Solo aplica a líneas agregadas (más allá de las 4 fijas). Libera
+        // también los contenedores que estuvieran asignados a esa fila.
+        removeSlot(slot) {
+            this.slots = this.slots.filter(s => s !== slot);
+            delete this.slotTimes[slot];
+
+            const next = { ...this.assignments };
+            for (const c in next) {
+                if (next[c].slot === slot) delete next[c];
+            }
+            this.assignments = next;
+        },
+
         clearAssignments() {
             this.assignments = {};
             // No tocar el pool ni recargar la vista: solo vaciar las asignaciones.
@@ -830,9 +900,9 @@
 
         // ─── Save ───
         async save() {
-            for (const s of [1, 2, 3, 4]) {
+            for (const s of this.slots) {
                 if (this.hasSlotTimeConflict(s)) {
-                    this.showToast({ type: 'error', title: 'Horarios repetidos', body: 'Las 4 horas deben ser distintas.' });
+                    this.showToast({ type: 'error', title: 'Horarios repetidos', body: 'Los horarios deben ser distintos.' });
                     return;
                 }
             }
