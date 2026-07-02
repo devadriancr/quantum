@@ -6,7 +6,12 @@
       "Bash(mkdir -p c:/dev-ykm/quantum/resources/views/livewire/reception-scans)",
       "Bash(composer show *)",
       "Bash(Get-ChildItem -Path . -Force)",
-      "Bash(Select-Object Name)"
+      "Bash(Select-Object Name)",
+      "Bash(php -l \"c:/dev-ykm/quantum/app/Http/Controllers/ExternalWarehouseController.php\")",
+      "Bash(php -l \"c:/dev-ykm/quantum/app/Livewire/ExternalWarehouse/ScanPanel.php\")",
+      "Bash(php -l \"c:/dev-ykm/quantum/app/Livewire/ExternalWarehouse/ReturnPanel.php\")",
+      "Bash(php -l app/Http/Controllers/ExternalWarehouseController.php)",
+      "Bash(php -l app/Http/Controllers/MaterialOutputController.php)"
     ]
   }
 }

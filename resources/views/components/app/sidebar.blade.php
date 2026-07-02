@@ -378,6 +378,35 @@
 
                             @endcan
 
+                            @can('view external-warehouse')
+                            <!-- Salida a Almacén Externo -->
+                            <li class="mb-1 last:mb-0">
+                                <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'external-warehouse'){{ 'text-violet-500!' }}@endif"
+                                href="{{ route('external-warehouse.index') }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 shrink-0">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+                                    </svg>
+                                    <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
+                                        {{ __('Salida a Almacén Externo') }}
+                                    </span>
+                                </a>
+                            </li>
+
+                            <!-- Retornos de Almacén Externo -->
+                            <li class="mb-1 last:mb-0">
+                                <a class="flex items-center gap-2 text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition @if(Request::segment(1) === 'external-warehouse-returns'){{ 'text-violet-500!' }}@endif"
+                                href="{{ route('external-warehouse.return.index') }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 shrink-0">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
+                                    </svg>
+                                    <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
+                                        {{ __('Retornos Almacén Externo') }}
+                                    </span>
+                                </a>
+                            </li>
+
+                            @endcan
+
                             @can('view stock-movements')
                             <!-- Histórico de Movimientos -->
                             <li class="mb-1 last:mb-0">

@@ -23,6 +23,7 @@ use App\Http\Controllers\ProjectPrefixController;
 use App\Http\Controllers\ReceptionScanController;
 use App\Http\Controllers\InventoryBalanceController;
 use App\Http\Controllers\MaterialOutputController;
+use App\Http\Controllers\ExternalWarehouseController;
 use App\Http\Controllers\StockLimitController;
 use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\TransactionTypeController;
@@ -90,6 +91,22 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/material-outputs/{movement}/complete', [MaterialOutputController::class, 'complete'])->name('material-outputs.complete');
     Route::delete('/material-outputs/{movement}/lines/{line}', [MaterialOutputController::class, 'removeLine'])->name('material-outputs.remove-line');
     Route::delete('/material-outputs/{movement}', [MaterialOutputController::class, 'destroy'])->name('material-outputs.destroy');
+
+    // Salida a Almacén Externo (L60 → L61)
+    Route::get('/external-warehouse', [ExternalWarehouseController::class, 'index'])->name('external-warehouse.index');
+    Route::post('/external-warehouse', [ExternalWarehouseController::class, 'store'])->name('external-warehouse.store');
+    Route::get('/external-warehouse/{movement}', [ExternalWarehouseController::class, 'show'])->name('external-warehouse.show');
+    Route::post('/external-warehouse/{movement}/scan', [ExternalWarehouseController::class, 'scan'])->name('external-warehouse.scan');
+    Route::post('/external-warehouse/{movement}/dispatch', [ExternalWarehouseController::class, 'dispatch'])->name('external-warehouse.dispatch');
+    Route::delete('/external-warehouse/{movement}/lines/{line}', [ExternalWarehouseController::class, 'removeLine'])->name('external-warehouse.remove-line');
+    Route::delete('/external-warehouse/{movement}', [ExternalWarehouseController::class, 'destroy'])->name('external-warehouse.destroy');
+    // Retornos de Almacén Externo (L61 → L60, independiente de viaje)
+    Route::get('/external-warehouse-returns', [ExternalWarehouseController::class, 'returnIndex'])->name('external-warehouse.return.index');
+    Route::post('/external-warehouse-returns', [ExternalWarehouseController::class, 'storeReturn'])->name('external-warehouse.return.store');
+    Route::get('/external-warehouse-returns/{movement}', [ExternalWarehouseController::class, 'showReturn'])->name('external-warehouse.return.show');
+    Route::post('/external-warehouse-returns/{movement}/scan', [ExternalWarehouseController::class, 'scanReturn'])->name('external-warehouse.return.scan');
+    Route::post('/external-warehouse-returns/{movement}/complete', [ExternalWarehouseController::class, 'completeReturn'])->name('external-warehouse.return.complete');
+    Route::delete('/external-warehouse-returns/{movement}', [ExternalWarehouseController::class, 'destroyReturn'])->name('external-warehouse.return.destroy');
 
     Route::resource('stock-limits', StockLimitController::class)->except(['show']);
 

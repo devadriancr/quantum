@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\InventoryBalance;
 use App\Models\Item;
 use App\Models\Location;
+use App\Models\ShipmentDocumentLine;
 use App\Models\StockMovement;
 use App\Models\StockMovementLine;
 use App\Models\TransactionType;
@@ -164,7 +165,117 @@ class MaterialOutputController extends Controller
                 }
             }
 
-            // Obtener o crear balance en L60 (permite negativos)
+            // ── Detección de ubicación y movimientos automáticos de trazabilidad ──
+            $transactionType = TransactionType::where('code', 'T')->where('status', 'ACTIVE')->first();
+            $warningMessage  = null;
+
+            $balanceL60 = InventoryBalance::where('item_id', $item->id)
+                ->where('location_id', $movement->location_id_from)
+                ->first();
+
+            if (! $balanceL60 || $balanceL60->current_quantity < $parsed['qty']) {
+                $locationL61 = Location::where('code', 'LIKE', 'L61%')->first();
+                $balanceL61  = $locationL61
+                    ? InventoryBalance::where('item_id', $item->id)->where('location_id', $locationL61->id)->first()
+                    : null;
+
+                if ($balanceL61 && $balanceL61->current_quantity >= $parsed['qty']) {
+                    // Material está en almacén externo (L61) sin retorno previo.
+                    // Auto-generar retorno L61 → L60 para mantener trazabilidad.
+                    $autoReturn = StockMovement::create([
+                        'movement_number'     => 'RTN-AUTO-' . now()->format('YmdHis'),
+                        'movement_date'       => today()->toDateString(),
+                        'movement_time'       => now()->toTimeString(),
+                        'transaction_type_id' => $transactionType?->id,
+                        'movement_type'       => 'TRANSFER',
+                        'location_id_from'    => $locationL61->id,
+                        'location_id_to'      => $movement->location_id_from,
+                        'notes'               => 'AUTO_RETURN_FROM_EXTERNAL',
+                        'status'              => 'COMPLETED',
+                        'created_by_user_id'  => auth()->id(),
+                        'updated_by_user_id'  => auth()->id(),
+                    ]);
+                    StockMovementLine::create([
+                        'stock_movement_id'   => $autoReturn->id,
+                        'item_id'             => $item->id,
+                        'quantity_received'   => $parsed['qty'],
+                        'serial_batch_number' => $parsed['serial'] ?? null,
+                        'unit_cost'           => $item->last_unit_cost,
+                        'created_by_user_id'  => auth()->id(),
+                        'updated_by_user_id'  => auth()->id(),
+                    ]);
+                    $balanceL61->current_quantity  -= $parsed['qty'];
+                    $balanceL61->last_movement_id   = $autoReturn->id;
+                    $balanceL61->last_movement_date = now();
+                    $balanceL61->save();
+
+                    $balanceL60 = InventoryBalance::firstOrCreate(
+                        ['item_id' => $item->id, 'location_id' => $movement->location_id_from],
+                        ['opening_quantity' => 0, 'current_quantity' => 0, 'reserved_quantity' => 0]
+                    );
+                    $balanceL60->current_quantity  += $parsed['qty'];
+                    $balanceL60->last_movement_id   = $autoReturn->id;
+                    $balanceL60->last_movement_date = now();
+                    $balanceL60->save();
+
+                    $warningMessage = "Advertencia: {$item->code} estaba en almacén externo sin recepción de retorno. Se generó {$autoReturn->movement_number} automáticamente para trazabilidad.";
+
+                } else {
+                    // No está en L61. Verificar si hay línea pendiente de contenedor.
+                    $pendingLine = ShipmentDocumentLine::where('item_id', $item->id)
+                        ->whereIn('status', ['PENDING', 'EXPECTED'])
+                        ->when(! empty($parsed['serial']), fn($q) => $q->where('serial_number', $parsed['serial']))
+                        ->first();
+
+                    if ($pendingLine) {
+                        // Auto-generar recepción de contenedor → L60.
+                        $autoReceipt = StockMovement::create([
+                            'movement_number'     => 'REC-AUTO-' . now()->format('YmdHis'),
+                            'movement_date'       => today()->toDateString(),
+                            'movement_time'       => now()->toTimeString(),
+                            'transaction_type_id' => $transactionType?->id,
+                            'movement_type'       => 'INBOUND',
+                            'location_id_from'    => null,
+                            'location_id_to'      => $movement->location_id_from,
+                            'notes'               => "AUTO_RECEIPT_FROM_CONTAINER:{$pendingLine->shipment_document_id}",
+                            'status'              => 'COMPLETED',
+                            'created_by_user_id'  => auth()->id(),
+                            'updated_by_user_id'  => auth()->id(),
+                        ]);
+                        StockMovementLine::create([
+                            'stock_movement_id'         => $autoReceipt->id,
+                            'shipment_document_line_id' => $pendingLine->id,
+                            'item_id'                   => $item->id,
+                            'quantity_received'         => $parsed['qty'],
+                            'serial_batch_number'       => $parsed['serial'] ?? null,
+                            'unit_cost'                 => $item->last_unit_cost,
+                            'created_by_user_id'        => auth()->id(),
+                            'updated_by_user_id'        => auth()->id(),
+                        ]);
+                        $balanceL60 = InventoryBalance::firstOrCreate(
+                            ['item_id' => $item->id, 'location_id' => $movement->location_id_from],
+                            ['opening_quantity' => 0, 'current_quantity' => 0, 'reserved_quantity' => 0]
+                        );
+                        $balanceL60->current_quantity  += $parsed['qty'];
+                        $balanceL60->last_movement_id   = $autoReceipt->id;
+                        $balanceL60->last_movement_date = now();
+                        $balanceL60->save();
+
+                        // Registrar recepción en la línea del documento de shipping
+                        $totalReceived = StockMovementLine::where('shipment_document_line_id', $pendingLine->id)
+                            ->sum('quantity_received');
+                        $pendingLine->quantity_received = $totalReceived;
+                        $pendingLine->status            = 'RECEIVED';
+                        $pendingLine->save();
+
+                        $warningMessage = "Advertencia: {$item->code} no tenía recepción de contenedor. Se generó {$autoReceipt->movement_number} automáticamente para trazabilidad.";
+                    }
+                    // Else: sin balance en ninguna ubicación conocida — se permite continuar
+                    // (L60 puede quedar negativo; el equipo de almacén debe regularizar)
+                }
+            }
+
+            // Obtener balance en L60 (ya actualizado si hubo auto-movimiento)
             $balance = InventoryBalance::firstOrCreate(
                 ['item_id' => $item->id, 'location_id' => $movement->location_id_from],
                 ['opening_quantity' => 0, 'current_quantity' => 0, 'reserved_quantity' => 0]
@@ -214,8 +325,8 @@ class MaterialOutputController extends Controller
             DB::commit();
 
             return response()->json([
-                'status'           => 'success',
-                'message'          => 'Salida registrada correctamente.',
+                'status'           => $warningMessage ? 'warning' : 'success',
+                'message'          => $warningMessage ?? 'Salida registrada correctamente.',
                 'item_code'        => $item->code,
                 'item_description' => $item->description,
                 'serial'           => $parsed['serial'] ?? null,

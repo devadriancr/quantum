@@ -18,13 +18,14 @@ class StockMovement extends Model
     ];
 
     public const STATUS_OPTIONS = [
-        'PENDING'   => 'Pendiente',
-        'COMPLETED' => 'Completado',
-        'CANCELED'  => 'Cancelado',
-        'RECEIVED'  => 'Recibido',
-        'VERIFIED'  => 'Verificado',
-        'RECORDED'  => 'Registrado',
-        'REJECTED'  => 'Rechazado',
+        'PENDING'    => 'Pendiente',
+        'IN_TRANSIT' => 'En Tránsito',
+        'COMPLETED'  => 'Completado',
+        'CANCELED'   => 'Cancelado',
+        'RECEIVED'   => 'Recibido',
+        'VERIFIED'   => 'Verificado',
+        'RECORDED'   => 'Registrado',
+        'REJECTED'   => 'Rechazado',
     ];
 
     protected $fillable = [
@@ -38,6 +39,8 @@ class StockMovement extends Model
         'partner_id',
         'container_id',
         'shipment_document_id',
+        'invoice_number',
+        'carta_porte',
         'notes',
         'status',
         'verified_by_user_id',
