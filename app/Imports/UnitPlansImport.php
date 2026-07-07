@@ -4,44 +4,154 @@ namespace App\Imports;
 
 use App\Models\Item;
 use Carbon\Carbon;
-use Illuminate\Support\Collection;
-use Maatwebsite\Excel\Concerns\ToCollection;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class UnitPlansImport implements ToCollection, WithHeadingRow
+class UnitPlansImport
 {
-    public array $errors             = [];
-    public int   $rows                = 0;
-    public int   $skipped             = 0;
-    public int   $itemsSkipped        = 0; // items no encontrados en catálogo
-    public int   $containersSkipped   = 0; // contenedores descartados por tener al menos un item ajeno al catálogo
-
     /**
-     * Estructura resultante:
+     * Estructura resultante de la pestaña "Container":
      *  groups: [
      *    [
      *      'date'       => 'YYYY-MM-DD',
      *      'date_label' => 'DD-MM-YYYY',
      *      'containers' => [
      *        [
-     *          'code'        => 'ONEU0764828',
-     *          'items'       => [
+     *          'code'       => 'ONEU0764828',
+     *          'items'      => [
      *             ['item_code'=>'PW5T02000','item_id'=>1,'quantity'=>42,'unit_cost'=>1.23,'currency'=>'USD','line_total'=>51.66],
      *             ...
      *          ],
-     *          'total_cost'  => 123.45,
+     *          'total_cost' => 123.45,
+     *        ],
      *      ],
      *    ],
      *  ]
      */
-    public array $groups = [];
+    public array $groups            = [];
 
-    public function collection(Collection $rows)
+    /**
+     * Items de la pestaña "PICS": [item_code => total_qty]
+     * Solo contiene items que existen en el catálogo.
+     */
+    public array $picsItems         = [];
+
+    public array $errors            = [];
+    public int   $rows              = 0;
+    public int   $skipped           = 0;
+    public int   $itemsSkipped      = 0;
+    public int   $containersSkipped = 0;
+
+    /**
+     * Punto de entrada: carga el archivo y procesa ambas pestañas.
+     * Se requiere la extensión original para seleccionar el reader correcto,
+     * ya que el archivo temporal de Livewire no siempre tiene extensión reconocible.
+     *
+     * XLSB: formato binario no soportado por PhpSpreadsheet. Se convierte
+     * automáticamente a XLSX vía Excel COM si está disponible en Windows.
+     */
+    public function import(string $filePath, string $extension = 'xlsx'): void
     {
-        // Normalizar: agrupar por (fecha → contenedor → item)
-        $buffer = []; // [date][container][item_code] => qty acumulada
+        $ext = strtolower($extension);
 
-        foreach ($rows as $row) {
+        if ($ext === 'xlsb') {
+            $tempXlsx = $this->convertXlsbToXlsx($filePath);
+
+            if ($tempXlsx === null) {
+                throw new \RuntimeException(
+                    "El formato .xlsb no se puede procesar directamente.\n" .
+                    "Abre el archivo en Excel, ve a Guardar como y selecciona el formato .xlsx, " .
+                    "luego vuelve a cargarlo."
+                );
+            }
+
+            try {
+                $reader = IOFactory::createReader('Xlsx');
+                $reader->setReadDataOnly(true);
+                $reader->setLoadSheetsOnly(['Container', 'PICS']);
+                $spreadsheet = $reader->load($tempXlsx);
+                $this->processContainerSheet($spreadsheet);
+                $this->processPicsSheet($spreadsheet);
+            } finally {
+                @unlink($tempXlsx);
+            }
+
+            return;
+        }
+
+        $readerType = match ($ext) {
+            'xls'   => 'Xls',
+            'csv'   => 'Csv',
+            default => 'Xlsx',
+        };
+
+        $reader = IOFactory::createReader($readerType);
+        // Solo datos (sin estilos, gráficas ni imágenes) — mejora de rendimiento significativa.
+        $reader->setReadDataOnly(true);
+        // Cargar únicamente las pestañas que necesitamos.
+        if (method_exists($reader, 'setLoadSheetsOnly')) {
+            $reader->setLoadSheetsOnly(['Container', 'PICS']);
+        }
+
+        $spreadsheet = $reader->load($filePath);
+
+        $this->processContainerSheet($spreadsheet);
+        $this->processPicsSheet($spreadsheet);
+    }
+
+    /**
+     * Convierte un archivo XLSB a XLSX usando Excel COM (solo Windows).
+     * Retorna la ruta del archivo temporal XLSX, o null si la conversión no
+     * es posible (COM no disponible, Excel no instalado, etc.).
+     */
+    private function convertXlsbToXlsx(string $filePath): ?string
+    {
+        if (!extension_loaded('com_dotnet')) {
+            return null;
+        }
+
+        $realPath = realpath($filePath);
+        if (!$realPath) {
+            return null;
+        }
+
+        $tempPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . uniqid('xlsb_', true) . '.xlsx';
+
+        try {
+            $excel = new \COM('Excel.Application');
+            $excel->Visible        = false;
+            $excel->DisplayAlerts  = false;
+
+            $workbook = $excel->Workbooks->Open($realPath);
+            $workbook->SaveAs($tempPath, 51); // 51 = xlOpenXMLWorkbook (.xlsx)
+            $workbook->Close(false);
+            $excel->Quit();
+
+            unset($workbook, $excel);
+
+            return file_exists($tempPath) ? $tempPath : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Pestaña "Container"
+    // ─────────────────────────────────────────────────────────────────────
+
+    private function processContainerSheet(\PhpOffice\PhpSpreadsheet\Spreadsheet $spreadsheet): void
+    {
+        $sheet = $spreadsheet->getSheetByName('Container');
+        if (!$sheet) {
+            $this->errors[] = "No se encontró la pestaña 'Container' en el archivo.";
+            return;
+        }
+
+        $assocRows = $this->sheetToAssocRows($sheet);
+        $buffer    = []; // [date][container][item_code] => qty acumulada
+
+        foreach ($assocRows as $row) {
             $this->rows++;
 
             $partNo        = trim((string) ($row['part_no'] ?? ''));
@@ -53,7 +163,7 @@ class UnitPlansImport implements ToCollection, WithHeadingRow
                 ?? $row['invoice_no']
                 ?? ''
             ));
-            $customsDate   = $this->parseDate(
+            $customsDate = $this->parseDate(
                 $row['date']
                 ?? $row['customs_date']
                 ?? $row['customs_date_yyyy_mm_dd']
@@ -70,24 +180,20 @@ class UnitPlansImport implements ToCollection, WithHeadingRow
                 ($buffer[$customsDate][$containerCode][$partNo] ?? 0) + $qty;
         }
 
-        // Ventana de fechas a procesar: hasta 15 días a partir de hoy, sin
-        // límite hacia el pasado (se incluyen todas las fechas vencidas).
+        // Ventana de fechas a procesar: hasta 15 días a partir de hoy.
         $maxDate = Carbon::today()->addDays(15)->format('Y-m-d');
         $buffer  = array_filter($buffer, fn($date) => $date <= $maxDate, ARRAY_FILTER_USE_KEY);
 
-        // Resolver items y costos.
-        // OJO: array_keys() devuelve int para claves numéricas (PHP convierte
-        // automáticamente '73026060' → 73026060). Forzamos string para que el
-        // whereIn enlace parámetros nvarchar; de lo contrario SQL Server intenta
-        // convertir la columna `code` a int y falla con códigos alfanuméricos.
+        // Resolver items y costos en lote.
+        // Forzamos string: SQL Server falla si intenta convertir la columna `code`
+        // a int con códigos alfanuméricos.
         $allCodes = collect($buffer)
             ->flatMap(fn($byContainer) => collect($byContainer)->flatMap(fn($byItem) => array_keys($byItem)))
             ->map(fn($code) => (string) $code)
             ->unique()
             ->values();
 
-        // SQL Server limita a 2100 parámetros por consulta. Troceamos el
-        // whereIn para soportar planes con miles de códigos distintos.
+        // SQL Server limita a 2100 parámetros por consulta — troceamos.
         $items = $allCodes
             ->chunk(2000)
             ->flatMap(fn($chunk) => Item::whereIn('code', $chunk->values())
@@ -95,20 +201,15 @@ class UnitPlansImport implements ToCollection, WithHeadingRow
                 ->get())
             ->keyBy('code');
 
-        // Orden ascendente: de la fecha más vieja hacia la más próxima
-        // (tope hoy+15).
-        ksort($buffer);
+        ksort($buffer); // de más viejo a más reciente
 
         foreach ($buffer as $date => $byContainer) {
             ksort($byContainer);
-
             $containers = [];
 
             foreach ($byContainer as $containerCode => $byItem) {
-                // El proveedor manda en el mismo Excel números de parte de
-                // otros clientes. Si el contenedor tiene al menos un item que
-                // no pertenece a nuestro catálogo, se descarta por completo
-                // (no solo esa línea) para no mezclar contenedores ajenos.
+                // Si el contenedor tiene al menos un item fuera del catálogo,
+                // se descarta completo para no mezclar contenedores ajenos.
                 $missingCodes = [];
                 foreach ($byItem as $itemCode => $qty) {
                     if (!$items->has((string) $itemCode)) {
@@ -119,7 +220,7 @@ class UnitPlansImport implements ToCollection, WithHeadingRow
                 if (!empty($missingCodes)) {
                     $this->containersSkipped++;
                     $this->itemsSkipped += count($missingCodes);
-                    $this->errors[] = "Contenedor '{$containerCode}' descartado: contiene item(s) ajeno(s) al catálogo (" . implode(', ', $missingCodes) . ").";
+                    $this->errors[] = "Contenedor '{$containerCode}' descartado: item(s) ajeno(s) al catálogo (" . implode(', ', $missingCodes) . ").";
                     continue;
                 }
 
@@ -127,12 +228,11 @@ class UnitPlansImport implements ToCollection, WithHeadingRow
                 $linesOut       = [];
 
                 foreach ($byItem as $itemCode => $qty) {
-                    $itemCode = (string) $itemCode; // claves numéricas llegan como int
+                    $itemCode = (string) $itemCode;
                     $item     = $items->get($itemCode);
 
-                    $unitCost = $item->lastCost ? (float) $item->lastCost->total_cost : 0.0;
-                    $currency = $item->lastCost?->currency?->code;
-
+                    $unitCost  = $item->lastCost ? (float) $item->lastCost->total_cost : 0.0;
+                    $currency  = $item->lastCost?->currency?->code;
                     $lineTotal = round($qty * $unitCost, 4);
                     $containerTotal += $lineTotal;
 
@@ -157,17 +257,111 @@ class UnitPlansImport implements ToCollection, WithHeadingRow
                 ];
             }
 
-            // Si la fecha quedó sin contenedores, no agregarla al output
-            if (empty($containers)) {
+            if (!empty($containers)) {
+                $this->groups[] = [
+                    'date'       => $date,
+                    'date_label' => Carbon::parse($date)->format('d-m-Y'),
+                    'containers' => $containers,
+                ];
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Pestaña "PICS"
+    // ─────────────────────────────────────────────────────────────────────
+
+    private function processPicsSheet(\PhpOffice\PhpSpreadsheet\Spreadsheet $spreadsheet): void
+    {
+        $sheet = $spreadsheet->getSheetByName('PICS');
+        if (!$sheet) {
+            return; // pestaña opcional — no genera error
+        }
+
+        $assocRows = $this->sheetToAssocRows($sheet);
+        $rawTotals = []; // [item_code => qty acumulada]
+
+        foreach ($assocRows as $row) {
+            // La columna del número de parte puede llamarse PARTS NO o PART NO
+            $partNo   = trim((string) ($row['parts_no'] ?? $row['part_no'] ?? ''));
+            $totalQty = (float) ($row['total_qty'] ?? 0);
+
+            if ($partNo === '' || $totalQty <= 0) {
                 continue;
             }
 
-            $this->groups[] = [
-                'date'       => $date,
-                'date_label' => Carbon::parse($date)->format('d-m-Y'),
-                'containers' => $containers,
-            ];
+            $rawTotals[$partNo] = ($rawTotals[$partNo] ?? 0) + $totalQty;
         }
+
+        if (empty($rawTotals)) {
+            return;
+        }
+
+        // Verificar existencia en catálogo — solo se conservan items registrados.
+        $codes = collect(array_keys($rawTotals))->map(fn($c) => (string) $c);
+
+        $existingCodes = $codes
+            ->chunk(2000)
+            ->flatMap(fn($chunk) => Item::whereIn('code', $chunk->values())->pluck('code'))
+            ->flip() // [code => index] para lookup O(1)
+            ->all();
+
+        foreach ($rawTotals as $code => $qty) {
+            $code = (string) $code;
+            if (isset($existingCodes[$code])) {
+                $this->picsItems[$code] = $qty;
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * Convierte una hoja a un array de arrays asociativos,
+     * usando la primera fila como encabezados normalizados (mismo formato
+     * que Maatwebsite\Excel\WithHeadingRow).
+     */
+    private function sheetToAssocRows(Worksheet $sheet): array
+    {
+        // null = celdas vacías como null | false = no calcular fórmulas (los
+        // datos del proveedor son valores planos — esto elimina el mayor cuello
+        // de botella de rendimiento de PhpSpreadsheet)
+        // false = valores sin formatear (fechas como número serial de Excel)
+        // false = índices numéricos (0-based)
+        $raw = $sheet->toArray(null, false, false, false);
+
+        if (count($raw) < 2) {
+            return [];
+        }
+
+        $headers = array_map(
+            fn($h) => $this->normalizeHeader((string) ($h ?? '')),
+            $raw[0]
+        );
+
+        $rows = [];
+        for ($i = 1, $total = count($raw); $i < $total; $i++) {
+            $assoc = [];
+            foreach ($headers as $j => $header) {
+                $assoc[$header] = $raw[$i][$j] ?? null;
+            }
+            $rows[] = $assoc;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Normaliza un encabezado al mismo formato que Maatwebsite/Excel:
+     * minúsculas, caracteres no alfanuméricos → guión bajo, sin guiones extremos.
+     */
+    private function normalizeHeader(string $h): string
+    {
+        $h = mb_strtolower(trim($h));
+        $h = preg_replace('/[^a-z0-9]+/', '_', $h);
+        return trim($h, '_');
     }
 
     private function parseDate(mixed $value): ?string
@@ -179,7 +373,7 @@ class UnitPlansImport implements ToCollection, WithHeadingRow
         if (is_numeric($value)) {
             try {
                 return Carbon::createFromTimestamp(
-                    \PhpOffice\PhpSpreadsheet\Shared\Date::excelToTimestamp((float) $value)
+                    ExcelDate::excelToTimestamp((float) $value)
                 )->format('Y-m-d');
             } catch (\Exception) {
                 return null;
@@ -188,7 +382,6 @@ class UnitPlansImport implements ToCollection, WithHeadingRow
 
         $str = trim((string) $value);
 
-        // Soportar formatos comunes
         foreach (['Y-m-d', 'Y/m/d', 'd/m/Y', 'd-m-Y', 'm/d/Y'] as $fmt) {
             try {
                 $dt = Carbon::createFromFormat($fmt, $str);

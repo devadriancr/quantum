@@ -25,4 +25,4 @@ Artisan::command('inspire', function () {
 |--------------------------------------------------------------------------
 */
 
-Schedule::command('sync:catalogs')->cron('35 11 * * *');
+Schedule::command('sync:catalogs')->cron('0 2 * * *');

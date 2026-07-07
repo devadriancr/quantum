@@ -9,7 +9,7 @@
                 <h1 class="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">Dashboard</h1>
             </div>
 
-            <!-- Right: Actions -->
+            {{-- <!-- Right: Actions -->
             <div class="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
 
                 <!-- Filter button -->
@@ -25,12 +25,12 @@
                   </svg>
                   <span class="max-xs:sr-only">Add View</span>
                 </button>
-                
-            </div>
+
+            </div> --}}
 
         </div>
-        
-        <!-- Cards -->
+
+        {{-- <!-- Cards -->
         <div class="grid grid-cols-12 gap-6">
 
             <!-- Line chart (Acme Plus) -->
@@ -64,15 +64,15 @@
             <x-dashboard.dashboard-card-10 />
 
             <!-- Card (Reasons for Refunds) -->
-            <x-dashboard.dashboard-card-11 />             
+            <x-dashboard.dashboard-card-11 />
 
             <!-- Card (Recent Activity) -->
             <x-dashboard.dashboard-card-12 />
-            
+
             <!-- Card (Income/Expenses) -->
             <x-dashboard.dashboard-card-13 />
 
-        </div>
+        </div> --}}
 
     </div>
 </x-app-layout>

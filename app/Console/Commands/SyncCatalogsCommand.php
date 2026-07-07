@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class SyncCatalogsCommand extends Command
 {
@@ -73,6 +74,7 @@ class SyncCatalogsCommand extends Command
      */
     public function handle(): int
     {
+        Log::alert("Iniciando sincronización de catálogos");
         $this->info('🚀 Iniciando sincronización de catálogos...');
         $this->newLine();
 

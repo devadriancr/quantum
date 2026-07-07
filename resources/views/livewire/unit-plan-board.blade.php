@@ -9,20 +9,20 @@
         </div>
 
         <div class="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
-            <input type="file" wire:model="excelFile" x-ref="fileInput" accept=".xlsx,.xls,.csv" class="hidden" />
+            <input type="file" wire:model="excelFile" x-ref="fileInput" accept=".xlsx,.xls,.xlsb,.xlsm,.csv" class="hidden" />
 
-            {{-- Cargar Contenedores: verde outline + icono table-cells de Heroicons --}}
+            {{-- Cargar Documento: verde outline + icono arrow-up-tray de Heroicons --}}
             <button
                 type="button"
                 @click="$refs.fileInput.click()"
                 wire:loading.attr="disabled"
                 class="btn border border-green-600 bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50 dark:bg-green-900/30 dark:text-green-300 dark:border-green-500 dark:hover:bg-green-900/50 transition-colors"
             >
-                {{-- Heroicons: table-cells (outline) --}}
+                {{-- Heroicons: arrow-up-tray (outline) --}}
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5 mr-2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 0 1-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0 1 12 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25m-17.25 0h7.5c.621 0 1.125.504 1.125 1.125M3.375 8.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m17.25-3.75h-7.5c-.621 0-1.125.504-1.125 1.125m8.625-1.125c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125M12 10.875v-1.5m0 1.5c0 .621-.504 1.125-1.125 1.125M12 10.875c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125M13.125 12h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125M20.625 12c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5M12 14.625v-1.5m0 1.5c0 .621-.504 1.125-1.125 1.125M12 14.625c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125m0 1.5v-1.5m0 0c0-.621.504-1.125 1.125-1.125m0 0h7.5" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                 </svg>
-                {{ __('Cargar Contenedores') }}
+                {{ __('Cargar Documento') }}
             </button>
 
             {{-- Limpiar Tabla: neutro outline + icono arrow-path de Heroicons --}}
@@ -70,12 +70,14 @@
                 x-transition:leave="transition ease-in duration-150"
                 x-transition:leave-start="opacity-100 translate-x-0"
                 x-transition:leave-end="opacity-0 translate-x-4"
-                class="pointer-events-auto rounded-lg shadow-lg border px-4 py-3 flex items-start gap-3"
+                class="pointer-events-auto rounded-lg shadow-lg border px-4 py-3 flex items-start gap-3 cursor-default"
                 :class="{
                     'bg-green-50 border-green-300 text-green-800 dark:bg-green-900/40 dark:border-green-700 dark:text-green-200': t.type === 'success',
                     'bg-red-50 border-red-300 text-red-800 dark:bg-red-900/40 dark:border-red-700 dark:text-red-200': t.type === 'error',
                     'bg-amber-50 border-amber-300 text-amber-800 dark:bg-amber-900/40 dark:border-amber-700 dark:text-amber-200': t.type === 'warning',
-                }">
+                }"
+                @mouseenter="pauseToast(t.id)"
+                @mouseleave="resumeToast(t.id)">
                 <div class="shrink-0 mt-0.5">
                     <svg x-show="t.type === 'success'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
@@ -313,13 +315,14 @@
             {{-- Cada columna (día) tiene su propio ranking ascendente: el item
                  más crítico (más negativo / menor stock) de ESE día queda
                  arriba, sin importar en qué posición esté en los otros días. --}}
-            <div x-show="itemsProjectionBase.length > 0" class="bg-white dark:bg-gray-800 shadow-xs rounded-xl border border-gray-200 dark:border-gray-700/60 overflow-auto max-h-[420px]">
-                <table class="w-full table-fixed dark:text-gray-300">
-                    <thead class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-b border-gray-100 dark:border-gray-700/60 sticky top-0 z-10">
+            <div x-show="itemsProjectionBase.length > 0" class="bg-white dark:bg-gray-800 shadow-xs rounded-xl border border-gray-200 dark:border-gray-700/60 overflow-auto max-h-[500px]">
+                <table class="w-full dark:text-gray-300">
+                    <thead class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 border-b-2 border-gray-300 dark:border-gray-600 sticky top-0 z-10">
                         <tr>
-                            <th class="w-8 px-2 py-3 text-center text-[10px]">{{ __('#') }}</th>
-                            <template x-for="day in days" :key="'ph-' + day.value">
-                                <th class="px-3 py-3 text-center border-l border-gray-100 dark:border-gray-700/60">
+                            <th class="w-7 px-1 py-3 text-center text-xs bg-gray-50 dark:bg-gray-900/20">{{ __('#') }}</th>
+                            <template x-for="(day, dayIdx) in days" :key="'ph-' + day.value">
+                                <th class="px-3 py-3 text-center border-l-2 border-gray-300 dark:border-gray-600 min-w-[130px]"
+                                    :class="dayIdx % 2 === 0 ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-gray-50 dark:bg-gray-900/20'">
                                     <div x-text="day.label"></div>
                                     <div class="text-[10px] font-normal normal-case text-gray-400 mt-0.5" x-text="dayDates[day.value]"></div>
                                 </th>
@@ -339,13 +342,45 @@
                         {{-- Filas con datos: cada fila es una posición de ranking,
                              no un item fijo. --}}
                         <template x-for="(row, rowIdx) in projectionRows" :key="'prow-' + rowIdx">
-                            <tr class="border-b border-gray-100 dark:border-gray-700/60 hover:bg-gray-50/60 dark:hover:bg-gray-900/20">
-                                <td class="px-1 py-2 text-center align-middle text-[10px] font-semibold text-gray-400" x-text="rowIdx + 1"></td>
+                            <tr class="border-b-2 border-gray-300 dark:border-gray-600 hover:brightness-95 dark:hover:brightness-110">
+                                <td class="px-1 py-2 text-center align-middle text-xs font-semibold text-gray-500 dark:text-gray-400" x-text="rowIdx + 1"></td>
                                 <template x-for="(cell, dIdx) in row" :key="'pd-' + rowIdx + '-' + dIdx">
-                                    <td class="px-2 py-2 text-center border-l border-gray-100 dark:border-gray-700/60"
-                                        :class="cellStockClass(cell.value, cell.min, cell.max)">
-                                        <div class="font-mono text-[10px] font-semibold truncate" x-text="cell.code"></div>
-                                        <div class="text-sm tabular-nums" x-text="formatInt(cell.value)"></div>
+                                    <td class="px-2 py-3 text-center border-l-2 border-gray-300 dark:border-gray-600 align-top"
+                                        :class="cellBgClass(cell.value, cell.min, cell.max, dIdx)">
+
+                                        {{-- N° Parte + indicador de estado --}}
+                                        <div class="flex items-center justify-center gap-1 mb-1.5">
+                                            <span class="shrink-0 w-1.5 h-1.5 rounded-full"
+                                                  :class="{
+                                                      'bg-red-500':     cell.min != null && cell.value <= cell.min,
+                                                      'bg-yellow-400':  cell.min != null && cell.max != null && cell.value > cell.min && cell.value >= cell.max,
+                                                      'bg-emerald-500': cell.min != null && cell.max != null && cell.value > cell.min && cell.value < cell.max,
+                                                      'bg-gray-300 dark:bg-gray-600': cell.min == null
+                                                  }"></span>
+                                            <span class="text-xs font-bold text-gray-700 dark:text-gray-300 truncate leading-none"
+                                                  x-text="cell.code"></span>
+                                        </div>
+
+                                        {{-- Valor de consumo puro (stock - d×daily) --}}
+                                        <div class="text-sm font-black tabular-nums leading-none"
+                                             :class="cellValueClass(cell.value, cell.min, cell.max)"
+                                             x-text="formatInt(cell.value)"></div>
+
+                                        {{-- INV / PICS con separador --}}
+                                        <div class="mt-2 pt-1.5 border-t border-gray-300 dark:border-gray-500 space-y-0.5">
+                                            <div class="flex items-center justify-between gap-1">
+                                                <span class="text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">INV</span>
+                                                <span class="text-xs font-semibold tabular-nums text-gray-800 dark:text-gray-200"
+                                                      x-text="formatInt(cell.inv)"></span>
+                                            </div>
+                                            <div x-show="cell.hasPics"
+                                                 class="flex items-center justify-between gap-1">
+                                                <span class="text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">PICS</span>
+                                                <span class="text-xs font-semibold tabular-nums text-gray-800 dark:text-gray-200"
+                                                      x-text="formatInt(cell.pics)"></span>
+                                            </div>
+                                        </div>
+
                                     </td>
                                 </template>
                             </tr>
@@ -427,7 +462,7 @@
             </div>
 
             {{-- Pool con datos --}}
-            <div x-show="excelData" class="space-y-4 overflow-y-auto max-h-[420px] pr-2">
+            <div x-show="excelData" class="space-y-4 overflow-y-auto max-h-[500px] pr-2">
                 <template x-for="(bucket, date) in poolByDate" :key="'g-' + date">
                     <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl border border-gray-200 dark:border-gray-700/60 p-4">
                         <div class="relative flex items-center justify-center mb-3">
@@ -439,7 +474,7 @@
 
                         <div class="kanban-pool grid content-start grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 min-h-20"
                              :data-pool-date="date">
-                            <template x-for="(price, code) in bucket.containers" :key="code">
+                            <template x-for="code in Object.keys(bucket.containers)" :key="code">
                                 <div class="kanban-card relative flex flex-col justify-center bg-violet-100 dark:bg-violet-900/40 border border-violet-400 text-violet-800 dark:text-violet-200 rounded-lg px-3 py-2 text-center cursor-move hover:shadow-md transition-shadow"
                                      :data-container-code="code">
                                     <button type="button"
@@ -452,7 +487,7 @@
                                         </svg>
                                     </button>
                                     <p class="font-bold text-xs truncate pr-5" x-text="code"></p>
-                                    <p class="font-bold text-xs opacity-75 mt-0.5" x-text="formatMoney(price)"></p>
+                                    <p class="font-bold text-xs opacity-75 mt-0.5" x-text="formatMoney(bucket.containers[code])"></p>
                                 </div>
                             </template>
                         </div>
@@ -502,6 +537,7 @@
         dayDates: @js($dayDates),
         toasts: [],
         toastSeq: 0,
+        toastTimers: {},
 
         // ─── Búsquedas ───
         containerSearch: '',
@@ -526,7 +562,7 @@
                     title:    data.title    || '',
                     body:     data.body     || '',
                     details:  data.details  || [],
-                    duration: data.type === 'error' || data.type === 'warning' ? 8000 : 5000,
+                    duration: data.type === 'error' || data.type === 'warning' ? 20000 : 12000,
                 });
             });
 
@@ -630,14 +666,19 @@
             return count;
         },
 
-        // Datos base por item, sin ordenar: {code, start, byDay (6 valores
-        // acumulados), min, max}.
+        // Datos base por item, sin ordenar.
+        // Cada entrada incluye: byDay (acumulado con recibos y consumo),
+        // invByDay (inventario inicial descontando consumo día a día, sin recibos),
+        // picsByDay (cantidad PICS descontando consumo día a día).
+        // invByDay y picsByDay no descuentan consumo en el día 1 (d=0); el
+        // descuento empieza a partir del día 2 (d≥1, restando d*daily).
         get itemsProjectionBase() {
             if (!this.excelData || Object.keys(this.assignments).length === 0) return [];
 
             const itemsByContainer = this.excelData.items_by_container;
             const stockByCode      = this.excelData.stock_by_code;
             const limitsByCode     = this.excelData.limits_by_code || {};
+            const picsByCode       = this.excelData.pics_by_code   || {};
 
             const perItemDay = {};
             for (const [code, pos] of Object.entries(this.assignments)) {
@@ -650,18 +691,41 @@
 
             const rows = [];
             for (const [code, byDay] of Object.entries(perItemDay)) {
-                const start  = stockByCode[code] || 0;
-                const limits = limitsByCode[code] || { min: null, max: null, daily: 0 };
-                const daily  = limits.daily || 0;
-                let running = start;
+                const start   = stockByCode[code] || 0;
+                const limits  = limitsByCode[code] || { min: null, max: null, daily: 0 };
+                const daily   = limits.daily || 0;
+                const picsQty = picsByCode[code]   || 0;
+
                 const cumulative = [];
+                const invByDay   = [];
+                const picsByDay  = [];
+                let containers = 0;
+
                 for (let d = 0; d < 6; d++) {
-                    // Cada día entra lo de los contenedores asignados y se
-                    // descuenta el consumo promedio diario (redondeado hacia arriba).
-                    running += byDay[d] - daily;
-                    cumulative.push(running);
+                    // Acumular piezas de contenedores asignados para este día.
+                    containers += byDay[d];
+
+                    // INV: stock al inicio del día, incluyendo contenedores ya recibidos.
+                    // Sin contenedores: día 1 = start (sin descuento), día 2 = start - daily, etc.
+                    invByDay.push(start + containers - d * daily);
+
+                    // Valor principal: stock al final del día = INV menos un consumo diario.
+                    cumulative.push(start + containers - (d + 1) * daily);
+
+                    // PICS: no se afecta por contenedores, solo baja por consumo.
+                    picsByDay.push(picsQty - d * daily);
                 }
-                rows.push({ code, start, byDay: cumulative, min: limits.min, max: limits.max });
+
+                rows.push({
+                    code,
+                    start,
+                    byDay: cumulative,
+                    invByDay,
+                    picsByDay,
+                    picsQty,
+                    min: limits.min,
+                    max: limits.max,
+                });
             }
             return rows;
         },
@@ -676,6 +740,7 @@
         // forma independiente, de menor a mayor (lo más negativo/crítico
         // primero). El item que cae en una posición puede variar de un día a
         // otro, por eso cada celda lleva su propio código de item.
+        // Cada celda incluye value (consumo), inv (INV del día) y pics (PICS del día).
         get projectionRows() {
             const base = this.filteredProjectionBase;
             if (base.length === 0) return [];
@@ -683,10 +748,13 @@
             const columns = [];
             for (let d = 0; d < 6; d++) {
                 const list = base.map(row => ({
-                    code:  row.code,
-                    value: row.byDay[d],
-                    min:   row.min,
-                    max:   row.max,
+                    code:    row.code,
+                    value:   row.byDay[d],
+                    inv:     row.invByDay  ? row.invByDay[d]  : 0,
+                    pics:    row.picsByDay ? row.picsByDay[d] : 0,
+                    hasPics: (row.picsQty || 0) > 0,
+                    min:     row.min,
+                    max:     row.max,
                 }));
                 list.sort((a, b) => a.value - b.value);
                 columns.push(list);
@@ -699,16 +767,25 @@
             return rows;
         },
 
-        // Color de la celda según el stock mínimo/máximo del item:
-        // por debajo del mínimo → rojo, por encima del máximo → amarillo,
-        // entre ambos → verde. Sin límites configurados → neutro.
-        cellStockClass(value, min, max) {
-            if (min === null || min === undefined || max === null || max === undefined) {
-                return 'text-gray-500 dark:text-gray-400';
+        // Fondo de la celda: color tenue de estado cuando hay límites configurados;
+        // fondo alterno de columna (slate/white) cuando no hay límites.
+        cellBgClass(value, min, max, dIdx) {
+            if (min == null || max == null) {
+                return (dIdx ?? 0) % 2 === 0
+                    ? 'bg-slate-50 dark:bg-slate-800/30'
+                    : 'bg-white dark:bg-gray-800';
             }
-            if (value <= min) return 'font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20';
-            if (value >= max) return 'font-bold text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20';
-            return 'font-bold text-green-700 dark:text-green-400 bg-green-50/60 dark:bg-green-900/20';
+            if (value <= min) return 'bg-red-50 dark:bg-red-900/25';
+            if (value >= max) return 'bg-amber-50 dark:bg-amber-900/25';
+            return 'bg-emerald-50 dark:bg-emerald-900/20';
+        },
+
+        // Color del valor de consumo: hereda el color temático de la celda.
+        cellValueClass(value, min, max) {
+            if (min == null || max == null) return 'text-gray-700 dark:text-gray-200';
+            if (value <= min) return 'text-red-600 dark:text-red-400';
+            if (value >= max) return 'text-yellow-600 dark:text-yellow-500';
+            return 'text-green-700 dark:text-green-400';
         },
 
         // ─── Helpers del tablero ───
@@ -845,6 +922,18 @@
                 onStart(evt) {
                     evt.item._homeParent = evt.from;
                     evt.item._homeNext   = evt.item.nextElementSibling;
+
+                    // forceFallback:true clona el nodo DOM y lo agrega a <body>
+                    // ANTES de disparar onStart (síncronamente). Alpine detecta
+                    // el clon vía MutationObserver (microtask), que corre DESPUÉS
+                    // de que el stack síncrono vacíe. Marcando x-ignore aquí —
+                    // síncronamente — el MO verá el atributo y no intentará
+                    // evaluar x-text="code" fuera del x-for donde 'code' no existe.
+                    const ghost = document.querySelector('body > .sortable-drag');
+                    if (ghost) {
+                        ghost.setAttribute('x-ignore', '');
+                        ghost.removeAttribute('data-has-alpine-state');
+                    }
                 },
 
                 onEnd(evt) {
@@ -888,14 +977,36 @@
         },
 
         // ─── Toasts ───
-        showToast({ type = 'success', title = '', body = '', details = [], duration = 5000 }) {
+        showToast({ type = 'success', title = '', body = '', details = [], duration = 12000 }) {
             const id = ++this.toastSeq;
             this.toasts.push({ id, type, title, body, details });
-            if (duration > 0) setTimeout(() => this.dismissToast(id), duration);
+            if (duration > 0) {
+                this.toastTimers[id] = {
+                    remaining: duration,
+                    startedAt: Date.now(),
+                    handle: setTimeout(() => this.dismissToast(id), duration),
+                };
+            }
+        },
+
+        pauseToast(id) {
+            const t = this.toastTimers[id];
+            if (!t || t.handle === null) return;
+            clearTimeout(t.handle);
+            t.handle    = null;
+            t.remaining = Math.max(0, t.remaining - (Date.now() - t.startedAt));
+        },
+
+        resumeToast(id) {
+            const t = this.toastTimers[id];
+            if (!t || t.handle !== null) return;
+            t.startedAt = Date.now();
+            t.handle    = setTimeout(() => this.dismissToast(id), t.remaining);
         },
 
         dismissToast(id) {
             this.toasts = this.toasts.filter(t => t.id !== id);
+            delete this.toastTimers[id];
         },
 
         // ─── Save ───

@@ -19,22 +19,25 @@ class InventoryBalanceController extends Controller
         $balances = InventoryBalance::with(['item', 'location.warehouse'])
             ->whereHas('location', fn($q) => $q->where('code', 'like', 'L60%')->orWhere('code', 'like', 'L61%'))
             ->when($search, function ($q) use ($search) {
-                $q->whereHas(
-                    'item',
-                    fn($i) => $i
-                        ->where('code', 'like', "%{$search}%")
-                        ->orWhere('description', 'like', "%{$search}%")
-                )->orWhereHas(
-                    'location',
-                    fn($l) => $l
-                        ->where('code', 'like', "%{$search}%")
-                        ->orWhere('name', 'like', "%{$search}%")
-                );
+                $q->where(function ($qq) use ($search) {
+                    $qq->whereHas(
+                        'item',
+                        fn($i) => $i
+                            ->where('code', 'like', "%{$search}%")
+                            ->orWhere('description', 'like', "%{$search}%")
+                    )->orWhereHas(
+                        'location',
+                        fn($l) => $l
+                            ->where('code', 'like', "%{$search}%")
+                            ->orWhere('name', 'like', "%{$search}%")
+                    );
+                });
             })
             ->when($warehouse, function ($q) use ($warehouse) {
                 $q->whereHas('location.warehouse', fn($w) => $w->where('id', $warehouse));
             })
             ->orderByDesc('updated_at')
+            ->orderByDesc('id')
             ->paginate(10)->withQueryString();
 
         $itemIds     = $balances->pluck('item_id')->unique()->values();
@@ -151,6 +154,7 @@ class InventoryBalanceController extends Controller
             ->when($dateTo,   fn($q) => $q->where('sm.movement_date', '<=', $dateTo))
             ->orderByDesc('sm.movement_date')
             ->orderByDesc('sm.movement_time')
+            ->orderByDesc('stock_movement_lines.id')
             ->select('stock_movement_lines.*')
             ->paginate(15)
             ->withQueryString();

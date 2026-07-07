@@ -51,18 +51,21 @@ class UnitPlanBoard extends Component
     public function updatedExcelFile(): void
     {
         $this->validate([
-            'excelFile' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+            'excelFile' => 'required|file|mimes:xlsx,xls,xlsb,csv|max:10240',
         ], [
             'excelFile.required' => 'Debes seleccionar un archivo.',
-            'excelFile.mimes'    => 'El archivo debe ser Excel (.xlsx, .xls) o CSV.',
+            'excelFile.mimes'    => 'El archivo debe ser Excel (.xlsx, .xls, .xlsb) o CSV.',
             'excelFile.max'      => 'El archivo no debe superar los 10 MB.',
         ]);
 
         try {
             $import = new UnitPlansImport();
-            Excel::import($import, $this->excelFile->getRealPath());
+            $import->import(
+                $this->excelFile->getRealPath(),
+                $this->excelFile->getClientOriginalExtension()
+            );
 
-            $payload = $this->buildPayload($import->groups);
+            $payload = $this->buildPayload($import->groups, $import->picsItems);
 
             $body = "{$import->rows} filas leídas, {$import->skipped} omitidas.";
             if ($import->itemsSkipped > 0) {
@@ -70,6 +73,9 @@ class UnitPlanBoard extends Component
             }
             if ($import->containersSkipped > 0) {
                 $body .= "\n{$import->containersSkipped} contenedor(es) descartados (sin items válidos).";
+            }
+            if (!empty($import->picsItems)) {
+                $body .= "\n" . count($import->picsItems) . " item(s) de PICS cargados.";
             }
 
             $this->dispatch('toast', type: 'success', title: 'Excel procesado', body: $body);
@@ -95,7 +101,7 @@ class UnitPlanBoard extends Component
      * Construye el payload completo, lo cachea server-side (para save) y
      * devuelve la estructura que Alpine va a usar para renderizar todo.
      */
-    private function buildPayload(array $groups): array
+    private function buildPayload(array $groups, array $picsItems = []): array
     {
         $pool             = [];
         $itemsByContainer = [];
@@ -181,6 +187,7 @@ class UnitPlanBoard extends Component
             'items_by_container' => $itemsByContainer,
             'item_ids'           => $itemIdByCode,
             'date_by_code'       => $this->buildDateByCode($pool),
+            'pics_by_code'       => $picsItems,
         ], now()->addHours(4));
 
         $this->cacheKey        = $cacheKey;
@@ -194,6 +201,7 @@ class UnitPlanBoard extends Component
             'unit_cost_by_code'  => $unitCostByCode,
             'stock_by_code'      => $stockByCode,
             'limits_by_code'     => $limitsByCode,
+            'pics_by_code'       => $picsItems,
             'total_containers'   => $this->totalContainers,
         ];
     }

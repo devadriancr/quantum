@@ -11,7 +11,16 @@
       "Bash(php -l \"c:/dev-ykm/quantum/app/Livewire/ExternalWarehouse/ScanPanel.php\")",
       "Bash(php -l \"c:/dev-ykm/quantum/app/Livewire/ExternalWarehouse/ReturnPanel.php\")",
       "Bash(php -l app/Http/Controllers/ExternalWarehouseController.php)",
-      "Bash(php -l app/Http/Controllers/MaterialOutputController.php)"
+      "Bash(php -l app/Http/Controllers/MaterialOutputController.php)",
+      "Bash(php -r \"echo extension_loaded\\('com_dotnet'\\) ? 'COM disponible' : 'COM NO disponible';\")",
+      "Bash(php --ini)",
+      "Bash(findstr /i \"com_dotnet\" \"C:\\\\xampp\\\\php\\\\php.ini\")",
+      "Bash(findstr /i \"com_dotnet\\\\|php_com\" \"C:\\\\xampp\\\\php\\\\php.ini\")",
+      "Read(//c/xampp/php/**)",
+      "Bash(php -r \"echo extension_loaded\\('com_dotnet'\\) ? 'COM disponible ✓' : 'COM NO disponible — reinicia Apache';\")"
+    ],
+    "additionalDirectories": [
+      "C:\\xampp\\php"
     ]
   }
 }

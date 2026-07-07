@@ -1,6 +1,9 @@
 import { Livewire } from '../../vendor/livewire/livewire/dist/livewire.esm';
- 
-Livewire.start()
+
+if (!window.__livewireStarted) {
+  window.__livewireStarted = true;
+  Livewire.start();
+}
 
 import './bootstrap';
 
