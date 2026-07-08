@@ -1,0 +1,10 @@
+{
+    "name": "xlsb-to-xlsx",
+    "private": true,
+    "version": "1.0.0",
+    "description": "Convierte archivos .xlsb a .xlsx usando SheetJS, sin depender de Excel.",
+    "main": "convert.js",
+    "dependencies": {
+        "xlsx": "^0.18.5"
+    }
+}

@@ -4,9 +4,12 @@ namespace App\Imports;
 
 use App\Models\Item;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Process\Process;
 
 class UnitPlansImport
 {
@@ -101,39 +104,34 @@ class UnitPlansImport
     }
 
     /**
-     * Convierte un archivo XLSB a XLSX usando Excel COM (solo Windows).
-     * Retorna la ruta del archivo temporal XLSX, o null si la conversión no
-     * es posible (COM no disponible, Excel no instalado, etc.).
+     * Convierte un archivo XLSB a XLSX vía SheetJS (Node.js), sin depender de
+     * Excel/COM. Retorna la ruta del archivo temporal XLSX, o null si la
+     * conversión falla.
      */
     private function convertXlsbToXlsx(string $filePath): ?string
     {
-        if (!extension_loaded('com_dotnet')) {
-            return null;
-        }
-
         $realPath = realpath($filePath);
         if (!$realPath) {
+            Log::warning('XLSB: no se pudo resolver realpath para el archivo subido.', ['filePath' => $filePath]);
             return null;
         }
 
-        $tempPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . uniqid('xlsb_', true) . '.xlsx';
+        $tempPath   = sys_get_temp_dir() . DIRECTORY_SEPARATOR . uniqid('xlsb_', true) . '.xlsx';
+        $scriptPath = base_path('scripts/xlsb-to-xlsx/convert.js');
+
+        $process = new Process([config('services.node.binary'), $scriptPath, $realPath, $tempPath]);
+        $process->setTimeout(120);
 
         try {
-            $excel = new \COM('Excel.Application');
-            $excel->Visible        = false;
-            $excel->DisplayAlerts  = false;
-
-            $workbook = $excel->Workbooks->Open($realPath);
-            $workbook->SaveAs($tempPath, 51); // 51 = xlOpenXMLWorkbook (.xlsx)
-            $workbook->Close(false);
-            $excel->Quit();
-
-            unset($workbook, $excel);
-
-            return file_exists($tempPath) ? $tempPath : null;
-        } catch (\Throwable) {
+            $process->mustRun();
+        } catch (ProcessFailedException $e) {
+            Log::error('XLSB: falló la conversión vía SheetJS (Node.js).', [
+                'message' => $e->getMessage(),
+            ]);
             return null;
         }
+
+        return file_exists($tempPath) ? $tempPath : null;
     }
 
     // ─────────────────────────────────────────────────────────────────────
