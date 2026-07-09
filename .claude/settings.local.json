@@ -17,10 +17,14 @@
       "Bash(findstr /i \"com_dotnet\" \"C:\\\\xampp\\\\php\\\\php.ini\")",
       "Bash(findstr /i \"com_dotnet\\\\|php_com\" \"C:\\\\xampp\\\\php\\\\php.ini\")",
       "Read(//c/xampp/php/**)",
-      "Bash(php -r \"echo extension_loaded\\('com_dotnet'\\) ? 'COM disponible ✓' : 'COM NO disponible — reinicia Apache';\")"
+      "Bash(php -r \"echo extension_loaded\\('com_dotnet'\\) ? 'COM disponible ✓' : 'COM NO disponible — reinicia Apache';\")",
+      "PowerShell(node -v)",
+      "PowerShell(\\(Get-Command node\\).Source)",
+      "PowerShell(php -l app/Livewire/UnitPlanBoard.php)"
     ],
     "additionalDirectories": [
-      "C:\\xampp\\php"
+      "C:\\xampp\\php",
+      "C:\\dev-ykm\\quantum\\\nNODE_BINARY_PATH=\"C:\\nvm4w\\nodejs"
     ]
   }
 }

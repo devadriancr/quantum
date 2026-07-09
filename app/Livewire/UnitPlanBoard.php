@@ -139,10 +139,13 @@ class UnitPlanBoard extends Component
 
             // union (no flatMap): las claves son item_id enteras y collapse
             // las reindexaría, rompiendo la asociación id => total.
+            // Cuenta el inventario en L60 (planta) + L61 (almacén externo),
+            // igual que la vista de saldos; otras ubicaciones no aplican.
             $stocks = collect($itemIds)
                 ->chunk(2000)
                 ->reduce(fn($carry, $chunk) => $carry->union(
                     InventoryBalance::whereIn('item_id', $chunk->values())
+                        ->whereHas('location', fn($q) => $q->where('code', 'like', 'L60%')->orWhere('code', 'like', 'L61%'))
                         ->select('item_id', DB::raw('SUM(current_quantity) as total'))
                         ->groupBy('item_id')
                         ->pluck('total', 'item_id')
@@ -152,12 +155,13 @@ class UnitPlanBoard extends Component
             }
 
             // Límites de stock por item (mín, máx, consumo diario promedio).
-            // Se agregan por item_id porque el inventario también se suma
-            // entre ubicaciones. El consumo diario se redondea hacia arriba.
+            // Igual que el inventario, solo aplican los de L60. El consumo
+            // diario se redondea hacia arriba.
             $limits = collect($itemIds)
                 ->chunk(2000)
                 ->flatMap(fn($chunk) => \App\Models\StockLimit::where('active', true)
                     ->whereIn('item_id', $chunk->values())
+                    ->whereHas('location', fn($q) => $q->where('code', 'like', 'L60%'))
                     ->select(
                         'item_id',
                         DB::raw('SUM(minimum_quantity) as min_qty'),
